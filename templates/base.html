@@ -1,0 +1,55 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Мастерская — Пескоструй • Покраска • Сварка{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="{% url 'core:home' %}" class="logo">
+                <span class="logo-icon">⚙</span>
+                <span class="logo-text">Мастерская</span>
+            </a>
+            <nav class="main-nav">
+                <a href="{% url 'core:home' %}">Главная</a>
+                <a href="{% url 'core:services' %}">Услуги</a>
+                <a href="{% url 'core:portfolio' %}">Работы</a>
+                <a href="{% url 'core:contacts' %}">Контакты</a>
+            </nav>
+            <div class="user-nav">
+                <div class="js-guest-only">
+                    <a href="/#login" class="btn btn-ghost">Войти</a>
+                    <a href="/#register" class="btn btn-primary">Регистрация</a>
+                </div>
+                <div class="js-auth-only hidden">
+                    <a href="{% url 'core:cabinet' %}" class="user-chip">
+                        <span class="user-avatar js-user-initials">?</span>
+                        <span class="user-name js-user-name">...</span>
+                    </a>
+                    <button class="btn btn-ghost js-logout">Выйти</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="site-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 Мастерская. Пескоструй • Порошковая покраска • Сварка</p>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{% static 'js/api.js' %}"></script>
+    <script src="{% static 'js/auth.js' %}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

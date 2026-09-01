@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <h1>Пескоструй • Порошковая покраска • Сварка</h1>
+        <p class="hero-subtitle">Профессиональная обработка металлических изделий с гарантией качества</p>
+        <div class="hero-actions">
+            <a href="#order" class="btn btn-primary btn-lg js-open-order">Оставить заявку</a>
+            <a href="{% url 'core:portfolio' %}" class="btn btn-ghost btn-lg">Наши работы</a>
+        </div>
+    </div>
+</section>
+
+<section class="container section">
+    <h2 class="section-title">Наши услуги</h2>
+    <div id="servicesGrid" class="services-grid">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(async function() {
+    try {
+        const data = await API.get('/services/');
+        const list = data.results || data;
+        const $grid = $('#servicesGrid').empty();
+        if (!list.length) {
+            $grid.html('<p class="muted">Услуги скоро появятся.</p>');
+            return;
+        }
+        list.forEach(s => {
+            $grid.append(`
+                <div class="service-card">
+                    <div class="service-icon">${s.icon || '⚙'}</div>
+                    <h3>${s.title}</h3>
+                    <p>${s.description}</p>
+                    <div class="service-price">от <strong>${s.price_from} ₽</strong> ${s.price_unit}</div>
+                </div>
+            `);
+        });
+    } catch (e) {
+        $('#servicesGrid').html('<p class="muted">Не удалось загрузить услуги.</p>');
+    }
+});
+</script>
+
+{% endblock %}

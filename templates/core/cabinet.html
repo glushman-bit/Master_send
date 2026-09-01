@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Личный кабинет — Мастерская{% endblock %}
+
+{% block content %}
+
+<div class="container section">
+    <h1>Личный кабинет</h1>
+    <div id="cabinetContent">
+        <p class="muted">Загрузка...</p>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+$(async function() {
+    if (!API.isLoggedIn()) {
+        window.location.href = '/#login';
+        return;
+    }
+    const user = API.user;
+    const $c = $('#cabinetContent');
+
+    let html = `
+        <div class="profile-layout">
+            <aside class="profile-card">
+                <div class="profile-avatar">${user.initials}</div>
+                <h2>${user.first_name || ''} ${user.last_name || ''}</h2>
+                <span class="role-badge">${user.role === 'master' ? 'Мастер' : 'Клиент'}</span>
+                <p class="muted">${user.email || ''}</p>
+                ${user.phone ? `<p class="muted">📞 ${user.phone}</p>` : ''}
+            </aside>
+            <section>
+                <div class="card">
+                    <h3>Мои заявки</h3>
+                    <div id="ordersList"><p class="muted">Загрузка...</p></div>
+                </div>
+                <div class="card" style="margin-top: 20px;">
+                    <h3>Редактировать профиль</h3>
+                    <form id="profileForm">
+                        <div class="form-group">
+                            <label>Имя</label>
+                            <input class="form-input" name="first_name" value="${user.first_name || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Фамилия</label>
+                            <input class="form-input" name="last_name" value="${user.last_name || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input class="form-input" name="email" type="email" value="${user.email || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Телефон</label>
+                            <input class="form-input" name="phone" value="${user.phone || ''}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
+                </div>
+            </section>
+        </div>
+    `;
+    $c.html(html);
+
+    // Загрузка заявок
+    try {
+        const data = await API.get('/orders/');
+        const orders = data.results || data;
+        const $list = $('#ordersList');
+        if (!orders.length) {
+            $list.html('<p class="muted">Заявок пока нет.</p>');
+        } else {
+            $list.html(orders.map(o => `
+                <div class="order-item">
+                    <div>
+                        <strong>${o.name}</strong>
+                        <span class="status status-${o.status}">${o.status_display}</span>
+                    </div>
+                    <div class="muted">${o.message}</div>
+                    <div class="muted">📅 ${new Date(o.created_at).toLocaleString('ru-RU')}</div>
+                </div>
+            `).join(''));
+        }
+    } catch (e) {
+        $('#ordersList').html('<p class="muted">Не удалось загрузить заявки.</p>');
+    }
+
+    // Сохранение профиля
+    $('#profileForm').on('submit', async function(e) {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(this));
+        try {
+            const updated = await API.patch('/auth/me/', data);
+            API.setAuth(API.tokens, {...API.user, ...updated});
+            showToast('Профиль обновлён');
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    });
+});
+</script>
+
+{% endblock %}
