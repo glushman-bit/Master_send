@@ -12,16 +12,26 @@ class IsMaster(permissions.BasePermission):
         return request.user and request.user.is_authenticated and request.user.is_master
 
 
+class IsNotMaster(permissions.BasePermission):
+    """Запрещает создавать заявки мастерам и администраторам."""
+    message = 'Мастер не может оставлять заявки на работу.'
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return True
+        return not request.user.is_master
+
+
 class OrderViewSet(viewsets.ModelViewSet):
     """
-    - Клиент: видит только свои заявки.
-    - Мастер: видит все заявки и может менять статус.
+    - Клиент: может создавать заявку и видит только свои.
+    - Мастер: видит все заявки и может менять статус, но не может создавать.
     """
     serializer_class = OrderRequestSerializer
 
     def get_permissions(self):
         if self.action in ('create',):
-            return [permissions.AllowAny()]
+            return [permissions.IsAuthenticated(), IsNotMaster()]
         if self.action in ('list', 'retrieve'):
             return [permissions.IsAuthenticated()]
         if self.action in ('update', 'partial_update', 'destroy', 'update_status', 'stats'):
