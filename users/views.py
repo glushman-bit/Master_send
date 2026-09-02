@@ -112,3 +112,72 @@ class LogoutView(APIView):
             return Response({'detail': 'Вы вышли из системы.'})
         except Exception:
             return Response({'detail': 'Невалидный токен.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserStatsView(APIView):
+    """Статистика пользователей для панели администратора."""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        from django.db.models import Q
+        from django.utils import timezone
+        from datetime import timedelta
+
+        now = timezone.now()
+        month_ago = now - timedelta(days=30)
+
+        total = User.objects.count()
+        clients = User.objects.filter(role='client').count()
+        masters = User.objects.filter(Q(role='master') | Q(is_superuser=True)).count()
+        new_month = User.objects.filter(date_joined__gte=month_ago).count()
+        active_week = User.objects.filter(last_login__gte=now - timedelta(days=7)).count()
+
+        return Response({
+            'total': total,
+            'clients': clients,
+            'masters': masters,
+            'new_month': new_month,
+            'active_week': active_week,
+        })
+
+
+class UserListView(APIView):
+    """Список пользователей с количеством заказов по статусам (для панели администратора)."""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        from django.db.models import Count, Q
+        from orders.models import OrderRequest
+
+        users = User.objects.annotate(
+            _orders_total=Count('orders'),
+            _orders_new=Count('orders', filter=Q(orders__status=OrderRequest.Status.NEW)),
+            _orders_progress=Count('orders', filter=Q(orders__status=OrderRequest.Status.IN_PROGRESS)),
+            _orders_done=Count('orders', filter=Q(orders__status=OrderRequest.Status.DONE)),
+            _orders_cancelled=Count('orders', filter=Q(orders__status=OrderRequest.Status.CANCELLED)),
+        ).order_by('-date_joined')
+
+        result = []
+        for u in users:
+            result.append({
+                'id': u.id,
+                'username': u.username,
+                'first_name': u.first_name,
+                'last_name': u.last_name,
+                'email': u.email,
+                'phone': u.phone,
+                'avatar': u.avatar.url if u.avatar else None,
+                'role': u.role,
+                'initials': u.initials,
+                'date_joined': u.date_joined,
+                'is_master': u.is_master,
+                'orders': {
+                    'total': u._orders_total,
+                    'new': u._orders_new,
+                    'progress': u._orders_progress,
+                    'done': u._orders_done,
+                    'cancelled': u._orders_cancelled,
+                },
+            })
+
+        return Response(result)
