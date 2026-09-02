@@ -65,6 +65,7 @@ $(function() {
     // Обновление UI при изменении auth
     function updateAuthUI() {
         const user = API.user;
+        const isClient = !!user && !user.is_master;
         if (user) {
             $('.js-guest-only').addClass('hidden');
             $('.js-auth-only').removeClass('hidden');
@@ -77,12 +78,51 @@ $(function() {
                 $('.user-chip .user-avatar').text(user.initials);
             }
             $('.js-admin-link').toggleClass('hidden', !user.is_master);
+            $('.js-add-order-only').toggleClass('hidden', !!user.is_master);
+            $('.js-order-blocked').toggleClass('hidden', isClient);
         } else {
             $('.js-guest-only').removeClass('hidden');
             $('.js-auth-only').addClass('hidden');
             $('.js-admin-link').addClass('hidden');
+            $('.js-add-order-only').addClass('hidden');
+            $('.js-order-blocked').removeClass('hidden');
         }
+        $('.js-create-order').toggleClass('hidden', !!user && user.is_master);
     }
+
+    // Кнопка «Создать заявку» в сайдбаре
+    $(document).on('click', '.js-create-order', function(e) {
+        e.preventDefault();
+        const user = API.user;
+        if (user && !user.is_master) {
+            window.location.href = '/contacts/';
+        } else {
+            openWarningModal();
+        }
+    });
+
+    // Модальное окно-предупреждение о необходимости авторизации
+    function openWarningModal() {
+        $('#warningModal').removeClass('hidden');
+        $('body').addClass('modal-open');
+    }
+    function closeWarningModal() {
+        $('#warningModal').addClass('hidden');
+        $('body').removeClass('modal-open');
+    }
+    $(document).on('click', '.js-warning-close, .js-warning-login', function(e) {
+        e.preventDefault(); closeWarningModal();
+        if ($(this).hasClass('js-warning-login')) openAuthModal('login');
+    });
+    $(document).on('click', '.js-warning-register', function(e) {
+        e.preventDefault(); closeWarningModal(); openAuthModal('register');
+    });
+    $(document).on('mousedown', '#warningModal', function(e) {
+        if (e.target === this) closeWarningModal();
+    });
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') closeWarningModal();
+    });
     $(document).on('auth:change', updateAuthUI);
     updateAuthUI();
 
