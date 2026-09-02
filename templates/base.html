@@ -15,13 +15,6 @@
                 <span class="logo-icon">⚙</span>
                 <span class="logo-text">Мастерская</span>
             </a>
-            <nav class="main-nav">
-                <a href="{% url 'core:home' %}">Главная</a>
-                <a href="{% url 'core:services' %}">Услуги</a>
-                <a href="{% url 'core:portfolio' %}">Работы</a>
-                <a href="{% url 'core:contacts' %}">Контакты</a>
-                <a href="{% url 'core:admin_panel' %}" class="nav-admin-link js-admin-link hidden">Панель</a>
-            </nav>
             <div class="user-nav">
                 <div class="js-guest-only">
                     <a href="/#login" class="btn btn-ghost js-open-login">Войти</a>
@@ -47,9 +40,20 @@
         </div>
     </header>
 
-    <main class="site-main">
-        {% block content %}{% endblock %}
-    </main>
+    <div class="layout">
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="{% url 'core:services' %}">Услуги</a>
+                <a href="{% url 'core:portfolio' %}">Работы</a>
+                <a href="{% url 'core:contacts' %}">Контакты</a>
+            </nav>
+            <a href="#" class="btn btn-primary sidebar-create js-create-order">Оставить заявку</a>
+            <a href="{% url 'core:admin_panel' %}" class="sidebar-admin js-admin-link hidden">Панель администратора</a>
+        </aside>
+        <main class="site-main">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
 
     <footer class="site-footer">
         <div class="container">
@@ -124,6 +128,20 @@
                 <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
                 <p class="muted modal-switch">Уже есть аккаунт? <a href="#" class="js-to-login">Войдите</a></p>
             </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно-предупреждение о необходимости авторизации -->
+    <div id="warningModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="warningTitle">
+        <div class="modal warning-modal">
+            <button type="button" class="modal-close js-warning-close" aria-label="Закрыть">&times;</button>
+            <div class="auth-header">
+                <h2 id="warningTitle">Необходима авторизация</h2>
+                <p id="warningSubtitle" class="muted">Для оставления заявки нужно войти в аккаунт</p>
+            </div>
+            <p class="warning-text">Чтобы оставить заявку на работу, пожалуйста, авторизуйтесь или зарегистрируйтесь.</p>
+            <button type="button" class="btn btn-primary btn-block js-warning-login">Войти</button>
+            <button type="button" class="btn btn-ghost btn-block js-warning-register" style="margin-top:10px;">Зарегистрироваться</button>
         </div>
     </div>
 </body>
