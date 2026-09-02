@@ -21,7 +21,7 @@
             </div>
         </div>
 
-        <div class="card order-form-card">
+        <div class="card order-form-card js-add-order-only">
             <h2>Заявка на расчёт</h2>
             <p class="muted">Расскажите о задаче — пришлём предварительный расчёт и сроки</p>
 
@@ -51,6 +51,18 @@
                 <div class="form-error hidden js-error"></div>
                 <button type="submit" class="btn btn-primary btn-block">Отправить заявку</button>
             </form>
+        </div>
+
+        <div class="card order-form-card js-order-blocked hidden">
+            <h2>Заявка на расчёт</h2>
+            <p class="muted">Расскажите о задаче — пришлём предварительный расчёт и сроки</p>
+            <div class="order-blocked-note">
+                <p>Для оставления заявки на расчёт необходимо <strong>авторизоваться</strong>.</p>
+                <div class="hero-actions">
+                    <a href="#" class="btn btn-primary js-open-login">Войти</a>
+                    <a href="#" class="btn btn-ghost js-open-register">Регистрация</a>
+                </div>
+            </div>
         </div>
     </div>
 </section>
