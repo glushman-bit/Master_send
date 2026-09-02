@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from services.models import Service
 
@@ -12,7 +13,7 @@ class OrderRequest(models.Model):
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-        null=True, blank=True, related_name='orders', verbose_name='Клиент',
+        null=False, blank=False, related_name='orders', verbose_name='Клиент',
     )
     name = models.CharField(max_length=100, verbose_name='Имя')
     phone = models.CharField(max_length=20, verbose_name='Телефон')
@@ -27,6 +28,11 @@ class OrderRequest(models.Model):
         verbose_name = 'Заявка'
         verbose_name_plural = 'Заявки'
         ordering = ('-created_at',)
+
+    def clean(self):
+        super().clean()
+        if self.user and self.user.is_master:
+            raise ValidationError({'user': 'Мастер не может оставлять заявки на работу.'})
 
     def __str__(self):
         return f'{self.name} — {self.service or "без услуги"}'
