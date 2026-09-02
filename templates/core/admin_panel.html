@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+{% block title %}Панель администратора — Мастерская{% endblock %}
+
+{% block content %}
+<section class="container section">
+    <div class="admin-panel-head">
+        <div>
+            <h2 class="admin-panel-title">Панель администратора</h2>
+            <p class="muted">Заявки и пользователи, обновление в реальном времени</p>
+        </div>
+        <div class="admin-live" id="adminLive" title="Обновление онлайн">
+            <span class="live-dot"></span>
+            <span class="live-text">В сети</span>
+        </div>
+    </div>
+
+    <div class="admin-panel-stack">
+        <!-- ===== Заявки ===== -->
+        <div class="card admin-zone">
+            <div class="admin-zone-title">
+                <h2>Заявки</h2>
+                <span class="new-badge hidden" id="newOrdersBadge" title="Поступили новые заявки">0</span>
+            </div>
+
+            <div class="admin-stats">
+                <div class="stat-card stat-new">
+                    <div class="stat-value js-stat-new">–</div>
+                    <div class="stat-label">Новые</div>
+                </div>
+                <div class="stat-card stat-progress">
+                    <div class="stat-value js-stat-progress">–</div>
+                    <div class="stat-label">В работе</div>
+                </div>
+                <div class="stat-card stat-done">
+                    <div class="stat-value js-stat-done">–</div>
+                    <div class="stat-label">Выполнено</div>
+                </div>
+                <div class="stat-card stat-total">
+                    <div class="stat-value js-stat-total">–</div>
+                    <div class="stat-label">Всего</div>
+                </div>
+            </div>
+
+            <div class="admin-orders-head">
+                <h3>Список заявок</h3>
+                <select class="form-input admin-filter" id="adminStatusFilter">
+                    <option value="new">Новые</option>
+                    <option value="progress">В работе</option>
+                    <option value="done">Выполненные</option>
+                    <option value="cancelled">Отменённые</option>
+                    <option value="all">Все</option>
+                </select>
+            </div>
+            <div id="adminOrdersList"><p class="muted">Загрузка...</p></div>
+        </div>
+
+        <!-- ===== Пользователи ===== -->
+        <div class="card admin-zone">
+            <div class="admin-zone-title">
+                <h2>Пользователи</h2>
+            </div>
+
+            <div class="admin-stats">
+                <div class="stat-card stat-total">
+                    <div class="stat-value js-users-total">–</div>
+                    <div class="stat-label">Всего</div>
+                </div>
+                <div class="stat-card stat-progress">
+                    <div class="stat-value js-users-clients">–</div>
+                    <div class="stat-label">Клиентов</div>
+                </div>
+                <div class="stat-card stat-new">
+                    <div class="stat-value js-users-masters">–</div>
+                    <div class="stat-label">Мастеров</div>
+                </div>
+                <div class="stat-card stat-done">
+                    <div class="stat-value js-users-new-month">–</div>
+                    <div class="stat-label">Новых/мес</div>
+                </div>
+                <div class="stat-card stat-total">
+                    <div class="stat-value js-users-active-week">–</div>
+                    <div class="stat-label">Активн/нед</div>
+                </div>
+            </div>
+
+            <!-- Клиенты -->
+            <div class="admin-users-group">
+                <h3>Клиенты</h3>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Email</th>
+                                <th>Заказы</th>
+                                <th class="t-new">Новые</th>
+                                <th class="t-progress">В работе</th>
+                                <th class="t-done">Выполнено</th>
+                                <th class="t-cancelled">Отменено</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminClientsList">
+                            <tr><td colspan="7" class="muted">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Мастера -->
+            <div class="admin-users-group">
+                <h3>Мастера</h3>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Email</th>
+                                <th>Заказы</th>
+                                <th class="t-new">Новые</th>
+                                <th class="t-progress">В работе</th>
+                                <th class="t-done">Выполнено</th>
+                                <th class="t-cancelled">Отменено</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminMastersList">
+                            <tr><td colspan="7" class="muted">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    const POLL_INTERVAL = 20000;
+    let prevNew = null;
+    let timer = null;
+
+    function isAdmin() {
+        return !!(API.user && API.user.is_master);
+    }
+
+    if (!isAdmin()) {
+        window.location.href = '/';
+        return;
+    }
+
+    refreshAll();
+    timer = setInterval(refreshAll, POLL_INTERVAL);
+
+    async function refreshAll() {
+        const filter = $('#adminStatusFilter').val() || 'new';
+        await Promise.all([refreshStats(), refreshUserStats(), refreshOrders(filter), refreshUsers()]);
+    }
+
+    async function refreshStats() {
+        try {
+            const s = await API.get('/orders/stats/');
+            $('.js-stat-new').text(s.new);
+            $('.js-stat-progress').text(s.in_progress);
+            $('.js-stat-done').text(s.done);
+            $('.js-stat-total').text(s.total);
+            updateBadge(s.new);
+            pulseIfNew(s.new);
+        } catch (e) {}
+    }
+
+    async function refreshUserStats() {
+        try {
+            const s = await API.get('/auth/stats/');
+            $('.js-users-total').text(s.total);
+            $('.js-users-clients').text(s.clients);
+            $('.js-users-masters').text(s.masters);
+            $('.js-users-new-month').text(s.new_month);
+            $('.js-users-active-week').text(s.active_week);
+        } catch (e) {}
+    }
+
+    function updateBadge(count) {
+        const $badge = $('#newOrdersBadge');
+        if (count > 0) {
+            $badge.text(count).removeClass('hidden');
+        } else {
+            $badge.addClass('hidden');
+        }
+    }
+
+    function pulseIfNew(count) {
+        if (prevNew === null) { prevNew = count; return; }
+        if (count > prevNew) {
+            $('#newOrdersBadge').addClass('pulse');
+            showToast('Поступила новая заявка (' + count + ' новых)!', 'success');
+            setTimeout(() => $('#newOrdersBadge').removeClass('pulse'), 2000);
+        }
+        prevNew = count;
+    }
+
+    function renderUserAvatar(u) {
+        if (u.avatar) return '<img class="user-table-avatar" src="' + u.avatar + '" alt="">';
+        return '<span class="user-table-avatar avatar-fallback">' + u.initials + '</span>';
+    }
+
+    function renderUserRow(u) {
+        var o = u.orders;
+        return '<tr>' +
+            '<td><div class="user-cell">' + renderUserAvatar(u) +
+                '<div class="user-cell-info">' +
+                    '<strong>' + (u.first_name || u.username) + '</strong>' +
+                    '<div class="muted">' + (u.email || '—') + '</div>' +
+                '</div>' +
+            '</div></td>' +
+            '<td>' + (u.email || '—') + '</td>' +
+            '<td class="t-total"><strong>' + o.total + '</strong></td>' +
+            '<td class="t-new">' + o.new + '</td>' +
+            '<td class="t-progress">' + o.progress + '</td>' +
+            '<td class="t-done">' + o.done + '</td>' +
+            '<td class="t-cancelled">' + o.cancelled + '</td>' +
+        '</tr>';
+    }
+
+    async function refreshUsers() {
+        try {
+            const users = await API.get('/auth/users/');
+            if (!users || !users.length) {
+                $('#adminClientsList').html('<tr><td colspan="7" class="muted">Клиентов нет.</td></tr>');
+                $('#adminMastersList').html('<tr><td colspan="7" class="muted">Мастеров нет.</td></tr>');
+                return;
+            }
+            const clients = users.filter(function(u) { return !u.is_master; });
+            const masters = users.filter(function(u) { return u.is_master; });
+
+            $('#adminClientsList').html(
+                clients.length ? clients.map(renderUserRow).join('')
+                               : '<tr><td colspan="7" class="muted">Клиентов нет.</td></tr>'
+            );
+            $('#adminMastersList').html(
+                masters.length ? masters.map(renderUserRow).join('')
+                               : '<tr><td colspan="7" class="muted">Мастеров нет.</td></tr>'
+            );
+        } catch (e) {
+            $('#adminClientsList').html('<tr><td colspan="7" class="muted">Не удалось загрузить.</td></tr>');
+            $('#adminMastersList').html('<tr><td colspan="7" class="muted">Не удалось загрузить.</td></tr>');
+        }
+    }
+
+    async function refreshOrders(status) {
+        const url = status === 'all' ? '/orders/' : '/orders/?status=' + status;
+        const $list = $('#adminOrdersList');
+        try {
+            const data = await API.get(url);
+            const orders = data.results || data;
+            if (!orders.length) {
+                $list.html('<p class="muted">Заявок нет.</p>');
+                return;
+            }
+            $list.html(orders.map(function(o) {
+                var actions = '';
+                if (o.status === 'new') {
+                    actions =
+                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="progress">Взять в работу</button>' +
+                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="done">Выполнено</button>' +
+                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="cancelled">Отменить</button>';
+                } else if (o.status === 'progress') {
+                    actions =
+                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="done">Выполнено</button>' +
+                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="cancelled">Отменить</button>';
+                } else {
+                    actions = '<span class="muted">Заявка закрыта</span>';
+                }
+                return '<div class="order-item admin-order-item">' +
+                    '<div class="admin-order-main">' +
+                        '<strong>' + o.name + '</strong>' +
+                        '<span class="status status-' + o.status + '">' + o.status_display + '</span>' +
+                        '<span class="admin-order-created muted">📅 ' + new Date(o.created_at).toLocaleString('ru-RU') + '</span>' +
+                    '</div>' +
+                    (o.user_name ? '<div class="muted">👤 ' + o.user_name + '</div>' : '') +
+                    '<div class="muted">' + o.message + '</div>' +
+                    '<div class="admin-order-actions">' + actions + '</div>' +
+                '</div>';
+            }).join(''));
+        } catch (e) {
+            $list.html('<p class="muted">Не удалось загрузить заявки.</p>');
+        }
+    }
+
+    $(document).on('click', '.js-set-status', async function() {
+        var $btn = $(this);
+        var id = $btn.data('id');
+        var status = $btn.data('status');
+        $btn.prop('disabled', true);
+        try {
+            await API.post('/orders/' + id + '/status/', {status: status});
+            showToast('Статус заявки обновлён');
+            refreshAll();
+        } catch (err) {
+            showToast(err.message || 'Не удалось обновить статус', 'error');
+            $btn.prop('disabled', false);
+        }
+    });
+
+    $('#adminStatusFilter').on('change', function() {
+        refreshOrders(this.value);
+    });
+});
+</script>
+{% endblock %}

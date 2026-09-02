@@ -20,3 +20,8 @@ def contacts_view(request):
 def cabinet_view(request):
     """Личный кабинет — рендерится шаблон, данные грузятся через API."""
     return render(request, 'core/cabinet.html')
+
+
+def admin_panel_view(request):
+    """Панель администратора — управление заявками и статистика."""
+    return render(request, 'core/admin_panel.html')
