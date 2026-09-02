@@ -443,6 +443,9 @@ textarea.form-input { resize: vertical; min-height: 90px; }
     gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
 }
 .admin-panel-title { margin: 0 0 4px; font-size: 24px; }
+.admin-section-title { margin: 24px 0 12px; font-size: 18px; font-weight: 700; }
+.admin-stats-users { margin-bottom: 24px; }
+.nav-admin-link { color: var(--primary) !important; font-weight: 700; }
 .admin-live {
     display: flex; align-items: center; gap: 8px;
     padding: 6px 12px;
@@ -508,6 +511,66 @@ textarea.form-input { resize: vertical; min-height: 90px; }
 .admin-card { margin-bottom: 20px; }
 .admin-card p { margin: 0 0 14px; }
 
+/* ===== Admin panel (vertical stack) ===== */
+.admin-panel-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.admin-zone { padding: 24px; }
+.admin-zone-title {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+}
+.admin-zone-title h2 { margin: 0; font-size: 20px; }
+
+/* User group sections (clients / masters) */
+.admin-users-group { margin-top: 24px; }
+.admin-users-group h3 { margin: 0 0 12px; font-size: 16px; color: var(--text); }
+
+/* ===== Admin users table ===== */
+.table-wrap { overflow-x: auto; }
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.admin-table th, .admin-table td {
+    text-align: left;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.admin-table th {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.admin-table tbody tr:hover { background: var(--surface-2); }
+.admin-table td.t-new { color: var(--warning); font-weight: 700; }
+.admin-table td.t-progress { color: var(--primary); font-weight: 700; }
+.admin-table td.t-done { color: var(--success); font-weight: 700; }
+.admin-table td.t-cancelled { color: var(--danger); font-weight: 700; }
+.admin-table td.t-total { font-weight: 800; }
+.user-cell { display: flex; align-items: center; gap: 10px; }
+.user-table-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.avatar-fallback {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--primary) 0%, #fb923c 100%);
+    color: white;
+    font-size: 12px; font-weight: 700;
+}
+.user-cell-info strong { display: block; line-height: 1.2; }
+.user-cell-info .muted { font-size: 12px; }
+
 /* ===== Profile modal ===== */
 .profile-modal { width: 480px; }
 .avatar-edit { text-align: center; margin-bottom: 18px; }
@@ -547,18 +610,20 @@ textarea.form-input { resize: vertical; min-height: 90px; }
 }
 
 /* ===== Admin bell (header) ===== */
-.admin-bell {
+.user-actions .admin-bell {
     position: relative;
     width: 38px; height: 38px;
     display: inline-flex; align-items: center; justify-content: center;
     color: var(--text-muted);
-    border: 1px solid var(--border);
-    border-radius: 50%;
+    border: none;
+    border-right: 1px solid var(--border);
+    background: transparent;
+    flex-shrink: 0;
     transition: all 0.15s ease;
 }
-.admin-bell:hover { color: var(--primary); border-color: var(--primary); text-decoration: none; }
-.admin-bell.has-new { color: var(--primary); border-color: var(--primary); }
-.admin-bell.has-new svg { animation: bellRing 1s ease-in-out infinite; }
+.user-actions .admin-bell:hover { color: var(--primary); text-decoration: none; }
+.user-actions .admin-bell.has-new { color: var(--primary); }
+.user-actions .admin-bell.has-new svg { animation: bellRing 1s ease-in-out infinite; }
 @keyframes bellRing { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(12deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-8deg); } }
 .admin-bell-badge {
     position: absolute; top: -4px; right: -4px;
