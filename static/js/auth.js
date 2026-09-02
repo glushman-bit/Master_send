@@ -76,9 +76,11 @@ $(function() {
             } else {
                 $('.user-chip .user-avatar').text(user.initials);
             }
+            $('.js-admin-link').toggleClass('hidden', !user.is_master);
         } else {
             $('.js-guest-only').removeClass('hidden');
             $('.js-auth-only').addClass('hidden');
+            $('.js-admin-link').addClass('hidden');
         }
     }
     $(document).on('auth:change', updateAuthUI);
