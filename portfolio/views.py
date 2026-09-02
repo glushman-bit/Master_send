@@ -5,7 +5,7 @@ from .serializers import PortfolioItemSerializer
 
 class PortfolioViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PortfolioItem.objects.filter(is_published=True)
-    serializer_class = PortfolioSerializer = PortfolioItemSerializer
+    serializer_class = PortfolioItemSerializer
     permission_classes = (permissions.AllowAny,)
 
     def get_queryset(self):

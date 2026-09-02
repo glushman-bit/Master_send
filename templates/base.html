@@ -23,10 +23,17 @@
             </nav>
             <div class="user-nav">
                 <div class="js-guest-only">
-                    <a href="/#login" class="btn btn-ghost">Войти</a>
-                    <a href="/#register" class="btn btn-primary">Регистрация</a>
+                    <a href="/#login" class="btn btn-ghost js-open-login">Войти</a>
+                    <a href="#" class="btn btn-primary js-open-register">Регистрация</a>
                 </div>
                 <div class="js-auth-only hidden">
+                    <a href="{% url 'core:home' %}#admin-panel" class="admin-bell js-admin-bell hidden" title="Новые заявки">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span class="admin-bell-badge hidden" id="adminBellBadge">0</span>
+                    </a>
                     <a href="{% url 'core:cabinet' %}" class="user-chip">
                         <span class="user-avatar js-user-initials">?</span>
                         <span class="user-name js-user-name">...</span>
@@ -48,8 +55,73 @@
     </footer>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="{% static 'js/api.js' %}"></script>
-    <script src="{% static 'js/auth.js' %}"></script>
+    <script src="{% static 'js/api.js' %}?v=2"></script>
+    <script src="{% static 'js/auth.js' %}?v=2"></script>
+    <script src="{% static 'js/admin.js' %}?v=1"></script>
+
     {% block scripts %}{% endblock %}
+
+    <!-- Модальное окно входа / регистрации -->
+    <div id="authModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+        <div class="modal">
+            <button type="button" class="modal-close js-auth-close" aria-label="Закрыть">&times;</button>
+            <div class="auth-header">
+                <h2 id="authTitle">Вход</h2>
+                <p id="authSubtitle" class="muted">Войдите в свой аккаунт</p>
+            </div>
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab" data-mode="login">Вход</button>
+                <button type="button" class="auth-tab" data-mode="register">Регистрация</button>
+            </div>
+
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label for="loginUsername">Логин или email</label>
+                    <input class="form-input" id="loginUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Пароль</label>
+                    <input class="form-input" id="loginPassword" name="password" type="password" required>
+                </div>
+                <div class="form-error hidden js-error"></div>
+                <button type="submit" class="btn btn-primary btn-block">Войти</button>
+                <p class="muted modal-switch">Нет аккаунта? <a href="#" class="js-to-register">Зарегистрируйтесь</a></p>
+            </form>
+
+            <form id="registerForm" class="hidden" novalidate>
+                <div class="form-group">
+                    <label for="regUsername">Логин *</label>
+                    <input class="form-input" id="regUsername" name="username" required maxlength="150">
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email *</label>
+                    <input class="form-input" id="regEmail" name="email" type="email" required maxlength="254">
+                </div>
+                <div class="form-group">
+                    <label for="regFirstName">Имя *</label>
+                    <input class="form-input" id="regFirstName" name="first_name" required maxlength="150">
+                </div>
+                <div class="form-group">
+                    <label for="regLastName">Фамилия *</label>
+                    <input class="form-input" id="regLastName" name="last_name" required maxlength="150">
+                </div>
+                <div class="form-group">
+                    <label for="regPhone">Телефон *</label>
+                    <input class="form-input" id="regPhone" name="phone" type="tel" required maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Пароль *</label>
+                    <input class="form-input" id="regPassword" name="password" type="password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="regPasswordConfirm">Повторите пароль *</label>
+                    <input class="form-input" id="regPasswordConfirm" name="password_confirm" type="password" required minlength="6">
+                </div>
+                <div class="form-error hidden js-error"></div>
+                <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
+                <p class="muted modal-switch">Уже есть аккаунт? <a href="#" class="js-to-login">Войдите</a></p>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

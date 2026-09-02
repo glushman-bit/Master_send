@@ -33,10 +33,18 @@ $(async function() {
                 ${user.phone ? `<p class="muted">📞 ${user.phone}</p>` : ''}
             </aside>
             <section>
-                <div class="card">
-                    <h3>Мои заявки</h3>
-                    <div id="ordersList"><p class="muted">Загрузка...</p></div>
-                </div>
+                ${user.is_master ? `
+                    <div class="card admin-card">
+                        <h3>Панель администратора</h3>
+                        <p class="muted">Управление заявками клиентов вынесено на главную страницу.</p>
+                        <a href="/#admin-panel" class="btn btn-primary">Перейти к заявкам</a>
+                    </div>
+                ` : `
+                    <div class="card">
+                        <h3>Мои заявки</h3>
+                        <div id="ordersList"><p class="muted">Загрузка...</p></div>
+                    </div>
+                `}
                 <div class="card" style="margin-top: 20px;">
                     <h3>Редактировать профиль</h3>
                     <form id="profileForm">
@@ -64,27 +72,29 @@ $(async function() {
     `;
     $c.html(html);
 
-    // Загрузка заявок
-    try {
-        const data = await API.get('/orders/');
-        const orders = data.results || data;
-        const $list = $('#ordersList');
-        if (!orders.length) {
-            $list.html('<p class="muted">Заявок пока нет.</p>');
-        } else {
-            $list.html(orders.map(o => `
-                <div class="order-item">
-                    <div>
-                        <strong>${o.name}</strong>
-                        <span class="status status-${o.status}">${o.status_display}</span>
+    // Загрузка заявок (только для клиента)
+    if (!user.is_master) {
+        try {
+            const data = await API.get('/orders/');
+            const orders = data.results || data;
+            const $list = $('#ordersList');
+            if (!orders.length) {
+                $list.html('<p class="muted">Заявок пока нет.</p>');
+            } else {
+                $list.html(orders.map(o => `
+                    <div class="order-item">
+                        <div>
+                            <strong>${o.name}</strong>
+                            <span class="status status-${o.status}">${o.status_display}</span>
+                        </div>
+                        <div class="muted">${o.message}</div>
+                        <div class="muted">📅 ${new Date(o.created_at).toLocaleString('ru-RU')}</div>
                     </div>
-                    <div class="muted">${o.message}</div>
-                    <div class="muted">📅 ${new Date(o.created_at).toLocaleString('ru-RU')}</div>
-                </div>
-            `).join(''));
+                `).join(''));
+            }
+        } catch (e) {
+            $('#ordersList').html('<p class="muted">Не удалось загрузить заявки.</p>');
         }
-    } catch (e) {
-        $('#ordersList').html('<p class="muted">Не удалось загрузить заявки.</p>');
     }
 
     // Сохранение профиля

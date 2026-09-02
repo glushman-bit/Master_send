@@ -1,4 +1,67 @@
 $(function() {
+    // ===== Модальное окно входа / регистрации =====
+    function openAuthModal(mode) {
+        $('#authModal').removeClass('hidden');
+        $('body').addClass('modal-open');
+        showAuthMode(mode || 'login');
+        setTimeout(() => $('#authModal .form-input:visible').first().focus(), 50);
+    }
+
+    function closeAuthModal() {
+        $('#authModal').addClass('hidden');
+        $('body').removeClass('modal-open');
+        $('.js-error', '#authModal').text('').addClass('hidden');
+        $('#authModal form').each(function() { this.reset(); });
+    }
+
+    function showAuthMode(mode) {
+        const isLogin = mode === 'login';
+        $('#loginForm').toggleClass('hidden', !isLogin);
+        $('#registerForm').toggleClass('hidden', isLogin);
+        $('.auth-tab').toggleClass('active', function() { return $(this).data('mode') === mode; });
+        $('#authTitle').text(isLogin ? 'Вход' : 'Регистрация');
+        $('#authSubtitle').text(isLogin ? 'Войдите в свой аккаунт' : 'Создайте новый аккаунт');
+    }
+
+    // Открытие по кнопкам
+    $(document).on('click', '.js-open-login', function(e) {
+        e.preventDefault();
+        openAuthModal('login');
+    });
+    $(document).on('click', '.js-open-register', function(e) {
+        e.preventDefault();
+        openAuthModal('register');
+    });
+
+    // Переключение вкладок и ссылок
+    $(document).on('click', '.auth-tab', function() {
+        showAuthMode($(this).data('mode'));
+    });
+    $(document).on('click', '.js-to-register', function(e) {
+        e.preventDefault(); showAuthMode('register');
+    });
+    $(document).on('click', '.js-to-login', function(e) {
+        e.preventDefault(); showAuthMode('login');
+    });
+
+    // Закрытие: крестик, клик по фону, Esc
+    $(document).on('click', '.js-auth-close', closeAuthModal);
+    $(document).on('mousedown', '.modal-overlay', function(e) {
+        if (e.target === this) closeAuthModal();
+    });
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') closeAuthModal();
+    });
+
+    // Блокировка скролла фона при открытой модалке
+    $(document).on('click', '.js-open-login, .js-open-register', function() {
+        if (!$('#authModal').hasClass('hidden')) $('body').addClass('modal-open');
+    });
+
+    // Открытие по хэшу #login / #register
+    if (location.hash === '#login') openAuthModal('login');
+    else if (location.hash === '#register') openAuthModal('register');
+
     // Обновление UI при изменении auth
     function updateAuthUI() {
         const user = API.user;
@@ -29,8 +92,8 @@ $(function() {
         try {
             const res = await API.post('/auth/register/', data);
             API.setAuth(res.tokens, res.user);
-            showToast('Добро пожаловать, ' + res.user.first_name + '!');
-            window.location.href = '/';
+            closeAuthModal();
+            showToast('Добро пожаловать, ' + (res.user.first_name || res.user.username) + '!');
         } catch (err) {
             const msg = extractError(err);
             $err.text(msg).removeClass('hidden');
@@ -52,8 +115,8 @@ $(function() {
         try {
             const res = await API.post('/auth/login/', data);
             API.setAuth(res.tokens, res.user);
-            showToast('С возвращением, ' + res.user.first_name + '!');
-            window.location.href = '/';
+            closeAuthModal();
+            showToast('С возвращением, ' + (res.user.first_name || res.user.username) + '!');
         } catch (err) {
             $err.text(extractError(err)).removeClass('hidden');
         } finally {

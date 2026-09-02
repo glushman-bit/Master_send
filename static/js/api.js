@@ -18,7 +18,6 @@ const API = {
     async request(method, url, data, isFormData = false) {
         const opts = {
             method,
-            url: this.baseUrl + url,
             headers: {},
         };
         if (this.tokens?.access) {
@@ -26,20 +25,20 @@ const API = {
         }
         if (data) {
             if (isFormData) {
-                opts.data = data;
+                opts.body = data;
             } else {
                 opts.headers['Content-Type'] = 'application/json';
-                opts.data = JSON.stringify(data);
+                opts.body = JSON.stringify(data);
             }
         }
-        const res = await fetch(opts.url, opts);
+        const res = await fetch(this.baseUrl + url, opts);
         const text = await res.text();
         let json = null;
         try { json = text ? JSON.parse(text) : null; } catch (e) {}
 
         if (!res.ok) {
-            // Попробовать обновить токен при 401
-            if (res.status === 401 && this.tokens?.refresh && method !== 'POST') {
+            // Попробовать обновить токен при 401 (кроме самого refresh-эндпоинта)
+            if (res.status === 401 && this.tokens?.refresh && url !== '/auth/refresh/') {
                 const refreshed = await this.refreshAccessToken();
                 if (refreshed) return this.request(method, url, data, isFormData);
             }

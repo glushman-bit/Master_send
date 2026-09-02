@@ -1,8 +1,12 @@
+import re
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 User = get_user_model()
+
+PHONE_RE = re.compile(r'^\+?[\d\s()\-]{6,20}$')
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -22,12 +26,41 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Регистрация нового пользователя."""
-    password = serializers.CharField(write_only=True, validators=[validate_password])
-    password_confirm = serializers.CharField(write_only=True)
+    username = serializers.CharField(required=True, max_length=150)
+    email = serializers.EmailField(required=True)
+    first_name = serializers.CharField(required=True, max_length=150)
+    last_name = serializers.CharField(required=True, max_length=150)
+    phone = serializers.CharField(required=True, max_length=20)
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password_confirm = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'phone', 'password', 'password_confirm')
+
+    def validate_username(self, value):
+        value = value.strip()
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError('Пользователь с таким логином уже существует.')
+        return value
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('Пользователь с таким email уже существует.')
+        return value
+
+    def validate_phone(self, value):
+        value = value.strip()
+        if not PHONE_RE.match(value):
+            raise serializers.ValidationError('Укажите корректный номер телефона.')
+        return value
+
+    def validate_first_name(self, value):
+        return value.strip()
+
+    def validate_last_name(self, value):
+        return value.strip()
 
     def validate(self, attrs):
         if attrs['password'] != attrs.pop('password_confirm'):

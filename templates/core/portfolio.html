@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Наши работы — Мастерская{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <h1>Наши работы</h1>
+        <p class="hero-subtitle">До и после. Качество видно глазами</p>
+    </div>
+</section>
+
+<section class="container section">
+    <div id="portfolioGrid" class="portfolio-grid">
+        <p class="muted">Загрузка...</p>
+    </div>
+</section>
+
+<!-- Световое окно просмотра работы -->
+<div id="workModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal work-modal">
+        <button type="button" class="modal-close js-work-close" aria-label="Закрыть">&times;</button>
+        <div class="work-modal-body" id="workModalBody"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(async function() {
+    try {
+        const data = await API.get('/portfolio/');
+        const list = data.results || data;
+        const $grid = $('#portfolioGrid').empty();
+        if (!list.length) {
+            $grid.html('<p class="muted">Работы скоро появятся.</p>');
+            return;
+        }
+        list.forEach(p => {
+            $grid.append(`
+                <div class="portfolio-card js-work-open" data-id="${p.id}"
+                     role="button" tabindex="0" aria-label="Открыть работу: ${p.title}">
+                    <img class="portfolio-image" src="${p.image_after}" alt="${p.title}"
+                         loading="lazy" onerror="this.parentElement.classList.add('image-error')">
+                    <div class="portfolio-body">
+                        <h3>${p.title}</h3>
+                        <p>${p.description || ''}</p>
+                        <span class="portfolio-service">${p.service_title || ''}</span>
+                    </div>
+                </div>
+            `);
+        });
+    } catch (e) {
+        $('#portfolioGrid').html('<p class="muted">Не удалось загрузить работы.</p>');
+    }
+
+    // ===== Просмотр работы =====
+    const $modal = $('#workModal');
+    const $body = $('#workModalBody');
+
+    function openWork(p) {
+        $body.empty();
+        $body.append(`
+            <h2 class="work-title">${p.title}</h2>
+            <p class="work-service">${p.service_title || ''}</p>
+            <div class="work-photos">
+                <figure class="work-photo">
+                    <figcaption>До</figcaption>
+                    <img src="${p.image_before}" alt="${p.title} — до"
+                         onerror="this.parentElement.classList.add('image-error')">
+                </figure>
+                <figure class="work-photo">
+                    <figcaption>После</figcaption>
+                    <img src="${p.image_after}" alt="${p.title} — после"
+                         onerror="this.parentElement.classList.add('image-error')">
+                </figure>
+            </div>
+            ${p.description ? `<p class="work-desc">${p.description}</p>` : ''}
+        `);
+        $modal.removeClass('hidden');
+        $('body').addClass('modal-open');
+    }
+
+    function closeWork() {
+        $modal.addClass('hidden');
+        $('body').removeClass('modal-open');
+    }
+
+    $(document).on('click', '.js-work-open', async function() {
+        const id = $(this).data('id');
+        try {
+            const item = await API.get('/portfolio/' + id + '/');
+            openWork(item);
+        } catch (e) {
+            showToast('Не удалось открыть работу.', 'error');
+        }
+    });
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && !$modal.hasClass('hidden')) closeWork();
+    });
+    $(document).on('click', '.js-work-close', closeWork);
+    $(document).on('mousedown', '#workModal', function(e) {
+        if (e.target === this) closeWork();
+    });
+});
+</script>
+{% endblock %}
