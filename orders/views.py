@@ -8,6 +8,8 @@ from .serializers import OrderRequestSerializer, OrderStatusUpdateSerializer
 
 
 class IsMaster(permissions.BasePermission):
+    """Разрешает доступ только авторизованным мастерам."""
+
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated and request.user.is_master
 
@@ -30,6 +32,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderRequestSerializer
 
     def get_permissions(self):
+        """Возвращает набор разрешений в зависимости от выполняемого действия."""
         if self.action in ('create',):
             return [permissions.IsAuthenticated(), IsNotMaster()]
         if self.action in ('list', 'retrieve'):
@@ -39,6 +42,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
+        """Возвращает заявки: мастер видит все, клиент — только свои."""
         user = self.request.user
         if not user.is_authenticated:
             return OrderRequest.objects.none()
@@ -52,11 +56,13 @@ class OrderViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
+        """Сохраняет заявку, привязывая текущего авторизованного пользователя."""
         user = self.request.user if self.request.user.is_authenticated else None
         serializer.save(user=user)
 
     @action(detail=True, methods=['post'], url_path='status')
     def update_status(self, request, pk=None):
+        """Обновляет статус заявки (доступно мастерам)."""
         order = self.get_object()
         serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

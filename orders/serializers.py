@@ -14,6 +14,7 @@ class OrderRequestSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'user', 'status', 'created_at', 'updated_at')
 
     def validate(self, data):
+        """Проверяет заявку через модель (в т.ч. запрет для мастеров)."""
         request = self.context.get('request')
         user = getattr(request, 'user', None) if request else None
         instance = OrderRequest(**data)

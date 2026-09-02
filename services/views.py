@@ -10,6 +10,7 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.AllowAny,)
 
     def get_queryset(self):
+        """Возвращает активные услуги, при необходимости фильтруя по категории."""
         qs = super().get_queryset()
         category = self.request.query_params.get('category')
         if category:

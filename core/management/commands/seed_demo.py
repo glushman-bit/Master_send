@@ -14,15 +14,18 @@ W, H = 800, 500
 
 
 def hex_rgb(value: str):
+    """Преобразует hex-строку цвета в кортеж (R, G, B)."""
     value = value.lstrip('#')
     return tuple(int(value[i:i + 2], 16) for i in (0, 2, 4))
 
 
 def _mix(c1, c2, t):
+    """Интерполирует два цвета с коэффициентом t от 0 до 1."""
     return tuple(round(a + (b - a) * t) for a, b in zip(c1, c2))
 
 
 def _shade(color, factor):
+    """Затемняет или осветляет цвет, умножая каналы на factor."""
     return tuple(max(0, min(255, round(c * factor))) for c in color)
 
 
@@ -168,6 +171,7 @@ def make_image(label: str, bg_top, bg_bottom, slug: str, disc_color, dirty: bool
 
 
 def image_slug(title: str) -> str:
+    """Возвращает стабильный короткий идентификатор изображения по названию."""
     return hashlib.md5(title.encode('utf-8')).hexdigest()[:10]
 
 
@@ -235,12 +239,14 @@ class Command(BaseCommand):
     ]
 
     def add_arguments(self, parser):
+        """Добавляет аргумент командной строки --flush."""
         parser.add_argument(
             '--flush', action='store_true',
             help='Удалить существующие услуги и работы перед заполнением.',
         )
 
     def _set_image(self, item, field, label, bg_top, bg_bottom, disc_color, dirty):
+        """Генерирует и сохраняет изображение на объект работы, заменяя старое."""
         old = getattr(item, field)
         new = make_image(label, bg_top, bg_bottom, image_slug(item.title), disc_color, dirty=dirty)
         if old:
@@ -248,6 +254,7 @@ class Command(BaseCommand):
         setattr(item, field, new)
 
     def handle(self, *args, **options):
+        """Заполняет базу тестовыми услугами и работами портфолио."""
         if options['flush']:
             for item in PortfolioItem.objects.all():
                 for f in ('image_before', 'image_after'):

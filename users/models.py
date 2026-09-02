@@ -39,13 +39,16 @@ class User(AbstractUser):
         ordering = ['-date_joined']
 
     def __str__(self):
+        """Возвращает читаемое имя пользователя или логин."""
         return self.get_full_name() or self.username
 
     @property
     def is_master(self):
+        """True, если пользователь — мастер или суперпользователь."""
         return self.role == self.Role.MASTER or self.is_superuser
 
     @property
     def initials(self):
+        """Инициалы пользователя (первые буквы имени/фамилии, в верхнем регистре)."""
         name = self.get_full_name() or self.username
         return ''.join(p[0] for p in name.split()[:2]).upper()

@@ -10,6 +10,7 @@ User = get_user_model()
 
 class OrderTestCase(APITestCase):
     def setUp(self):
+        """Создаёт услугу, клиента и мастера для тестов заявок."""
         self.service = Service.objects.create(
             category=Service.Category.SAND,
             title='Пескоструй дисков',
@@ -24,6 +25,7 @@ class OrderTestCase(APITestCase):
         )
 
     def post_order(self, **overrides):
+        """Отправляет POST-запрос на создание заявки с указанными переопределениями."""
         data = {
             'name': 'Иван',
             'phone': '+79990000000',
@@ -34,23 +36,27 @@ class OrderTestCase(APITestCase):
         return self.client.post('/api/orders/', data, format='json')
 
     def test_anon_cannot_create_order(self):
+        """Неавторизованный пользователь не может создать заявку."""
         res = self.post_order()
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(OrderRequest.objects.count(), 0)
 
     def test_auth_client_can_create_order(self):
+        """Авторизованный клиент может создать заявку."""
         self.client.force_authenticate(self.client_user)
         res = self.post_order()
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(res.data['user'], self.client_user.id)
 
     def test_master_cannot_create_order(self):
+        """Мастер не может создать заявку."""
         self.client.force_authenticate(self.master)
         res = self.post_order()
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(OrderRequest.objects.count(), 0)
 
     def test_superuser_cannot_create_order(self):
+        """Суперпользователь не может создать заявку."""
         admin = User.objects.create_superuser(
             username='admin', password='Pass123!', email='admin@mail.ru'
         )
@@ -60,6 +66,7 @@ class OrderTestCase(APITestCase):
         self.assertEqual(OrderRequest.objects.count(), 0)
 
     def test_model_rejects_master_user(self):
+        """Модель отклоняет заявку от мастера при валидации."""
         from django.core.exceptions import ValidationError as DjangoValidationError
         from orders.models import OrderRequest as OR
         order = OR(
@@ -70,6 +77,7 @@ class OrderTestCase(APITestCase):
             order.full_clean()
 
     def test_client_sees_only_own_orders(self):
+        """Клиент видит только свои заявки."""
         self.client.force_authenticate(self.client_user)
         self.post_order()
         OrderRequest.objects.create(
@@ -81,6 +89,7 @@ class OrderTestCase(APITestCase):
         self.assertEqual(res.data['count'], 1)
 
     def test_master_sees_all_orders(self):
+        """Мастер видит все заявки."""
         self.client.force_authenticate(self.client_user)
         self.post_order()
         OrderRequest.objects.create(
@@ -93,6 +102,7 @@ class OrderTestCase(APITestCase):
         self.assertEqual(res.data['count'], 2)
 
     def test_master_can_update_status(self):
+        """Мастер может изменить статус заявки."""
         self.client.force_authenticate(self.client_user)
         self.post_order()
         order = OrderRequest.objects.first()
@@ -103,6 +113,7 @@ class OrderTestCase(APITestCase):
         self.assertEqual(order.status, OrderRequest.Status.IN_PROGRESS)
 
     def test_client_cannot_update_status(self):
+        """Клиент не может изменить статус заявки."""
         self.client.force_authenticate(self.client_user)
         self.post_order()
         order = OrderRequest.objects.first()
@@ -110,10 +121,12 @@ class OrderTestCase(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_anon_cannot_list_orders(self):
+        """Неавторизованный пользователь не может получить список заявок."""
         res = self.client.get('/api/orders/')
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_stats_master(self):
+        """Статистика по статусам доступна мастеру."""
         self.client.force_authenticate(self.client_user)
         self.post_order()
         self.post_order()
@@ -130,12 +143,14 @@ class OrderTestCase(APITestCase):
         self.assertEqual(res.data['total'], 3)
 
     def test_stats_forbidden_for_client_and_anon(self):
+        """Статистика запрещена клиенту и неавторизованному пользователю."""
         self.client.force_authenticate(self.client_user)
         self.assertEqual(self.client.get('/api/orders/stats/').status_code, status.HTTP_403_FORBIDDEN)
         self.client.force_authenticate(None)
         self.assertEqual(self.client.get('/api/orders/stats/').status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_status_filter(self):
+        """Фильтрация заявок по статусу работает."""
         self.client.force_authenticate(self.client_user)
         self.post_order()
         OrderRequest.objects.create(
@@ -149,6 +164,7 @@ class OrderTestCase(APITestCase):
         self.assertEqual(res.data['results'][0]['status'], 'progress')
 
     def test_master_is_superuser(self):
+        """Суперпользователь считается мастером и получает доступ к статистике."""
         admin = User.objects.create_superuser(
             username='admin', password='Pass123!', email='admin@mail.ru'
         )

@@ -14,6 +14,7 @@ User = get_user_model()
 
 
 def get_tokens_for_user(user):
+    """Возвращает пару JWT-токенов (refresh и access) для пользователя."""
     refresh = RefreshToken.for_user(user)
     return {'refresh': str(refresh), 'access': str(refresh.access_token)}
 
@@ -27,6 +28,7 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def create(self, request, *args, **kwargs):
+        """Регистрирует нового пользователя и возвращает его данные и JWT-токены."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -44,6 +46,7 @@ class LoginView(APIView):
     throttle_scope = 'login'
 
     def post(self, request):
+        """Выполняет вход и возвращает JWT-токены для аутентифицированного пользователя."""
         username = request.data.get('username', '').strip()
         password = request.data.get('password', '')
 
@@ -78,11 +81,13 @@ class MeView(generics.RetrieveUpdateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_serializer_class(self):
+        """Для изменений возвращает сериализатор обновления профиля, иначе — чтения."""
         if self.request.method in ('PUT', 'PATCH'):
             return ProfileUpdateSerializer
         return UserSerializer
 
     def get_object(self):
+        """Возвращает текущего авторизованного пользователя."""
         return self.request.user
 
 
@@ -91,6 +96,7 @@ class ChangePasswordView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
+        """Меняет пароль текущего пользователя."""
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         request.user.set_password(serializer.validated_data['new_password'])
@@ -103,6 +109,7 @@ class LogoutView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
+        """Отзывает (blacklist) refresh-токен пользователя при выходе."""
         try:
             refresh_token = request.data.get('refresh')
             if not refresh_token:
@@ -119,6 +126,7 @@ class UserStatsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request):
+        """Возвращает сводную статистику по пользователям для панели администратора."""
         from django.db.models import Q
         from django.utils import timezone
         from datetime import timedelta
@@ -146,6 +154,7 @@ class UserListView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request):
+        """Возвращает список пользователей с количеством заказов по статусам."""
         from django.db.models import Count, Q
         from orders.models import OrderRequest
 

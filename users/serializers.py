@@ -39,35 +39,42 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ('username', 'email', 'first_name', 'last_name', 'phone', 'password', 'password_confirm')
 
     def validate_username(self, value):
+        """Проверяет, что логин не занят, и возвращает его без лишних пробелов."""
         value = value.strip()
         if User.objects.filter(username__iexact=value).exists():
             raise serializers.ValidationError('Пользователь с таким логином уже существует.')
         return value
 
     def validate_email(self, value):
+        """Проверяет уникальность email и приводит его к нижнему регистру."""
         value = value.strip().lower()
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError('Пользователь с таким email уже существует.')
         return value
 
     def validate_phone(self, value):
+        """Проверяет корректность номера телефона по регулярному выражению."""
         value = value.strip()
         if not PHONE_RE.match(value):
             raise serializers.ValidationError('Укажите корректный номер телефона.')
         return value
 
     def validate_first_name(self, value):
+        """Убирает лишние пробелы в имени."""
         return value.strip()
 
     def validate_last_name(self, value):
+        """Убирает лишние пробелы в фамилии."""
         return value.strip()
 
     def validate(self, attrs):
+        """Сверяет пароль и подтверждение, проверяет их совпадение."""
         if attrs['password'] != attrs.pop('password_confirm'):
             raise serializers.ValidationError({'password_confirm': 'Пароли не совпадают.'})
         return attrs
 
     def create(self, validated_data):
+        """Создаёт нового пользователя с переданными данными."""
         return User.objects.create_user(**validated_data)
 
 
@@ -76,6 +83,7 @@ class ChangePasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True, validators=[validate_password])
 
     def validate_old_password(self, value):
+        """Проверяет, что старый пароль введён верно."""
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError('Старый пароль введён неверно.')

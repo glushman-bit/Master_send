@@ -10,6 +10,7 @@ User = get_user_model()
 
 class UserStatsTestCase(APITestCase):
     def setUp(self):
+        """Создаёт клиента, мастера и администратора для тестов статистики."""
         self.client_user = User.objects.create_user(
             username='client', password='Pass123!', email='client@mail.ru'
         )
@@ -21,10 +22,12 @@ class UserStatsTestCase(APITestCase):
         )
 
     def test_stats_requires_auth(self):
+        """Статистика пользователей требует авторизации."""
         res = self.client.get('/api/auth/stats/')
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_stats_returns_data(self):
+        """Статистика возвращает корректные данные о пользователях."""
         self.client.force_authenticate(self.admin)
         res = self.client.get('/api/auth/stats/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -35,15 +38,18 @@ class UserStatsTestCase(APITestCase):
         self.assertIn('active_week', res.data)
 
     def test_client_can_access_stats(self):
+        """Клиент также может получать статистику пользователей."""
         self.client.force_authenticate(self.client_user)
         res = self.client.get('/api/auth/stats/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_user_list_requires_auth(self):
+        """Список пользователей требует авторизации."""
         res = self.client.get('/api/auth/users/')
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_user_list_returns_order_counts(self):
+        """Список пользователей возвращает количества заказов по статусам."""
         service = Service.objects.create(
             category=Service.Category.SAND, title='Пескоструй', description='x', price_from=1000,
         )

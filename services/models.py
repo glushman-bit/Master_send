@@ -22,4 +22,5 @@ class Service(models.Model):
         ordering = ('order', 'id')
 
     def __str__(self):
+        """Читаемое представление услуги: категория — название."""
         return f'{self.get_category_display()} — {self.title}'

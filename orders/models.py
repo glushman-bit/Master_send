@@ -30,9 +30,11 @@ class OrderRequest(models.Model):
         ordering = ('-created_at',)
 
     def clean(self):
+        """Проверяет корректность заявки: мастер не может оставлять заявки."""
         super().clean()
         if self.user and self.user.is_master:
             raise ValidationError({'user': 'Мастер не может оставлять заявки на работу.'})
 
     def __str__(self):
+        """Читаемое представление заявки."""
         return f'{self.name} — {self.service or "без услуги"}'

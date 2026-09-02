@@ -9,6 +9,7 @@ from services.models import Service
 
 class PortfolioTestCase(TempMediaMixin, APITestCase):
     def setUp(self):
+        """Создаёт опубликованную и скрытую работу портфолио."""
         super().setUp()
         service = Service.objects.create(
             category=Service.Category.SAND,
@@ -25,6 +26,7 @@ class PortfolioTestCase(TempMediaMixin, APITestCase):
         )
 
     def test_lists_only_published(self):
+        """API возвращает только опубликованные работы."""
         res = self.client.get('/api/portfolio/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         titles = [p['title'] for p in res.data['results']]

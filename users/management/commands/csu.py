@@ -14,6 +14,7 @@ class Command(BaseCommand):
     help = 'Создаёт суперпользователя из ADMIN_USERNAME / ADMIN_PASSWORD (по умолчанию admin/admin).'
 
     def handle(self, *args, **options):
+        """Создаёт или обновляет суперпользователя из переменных окружения."""
         username = os.getenv('ADMIN_USERNAME', 'admin').strip()
         email = os.getenv('ADMIN_EMAIL', 'admin@example.com').strip()
         password = os.getenv('ADMIN_PASSWORD', 'admin')

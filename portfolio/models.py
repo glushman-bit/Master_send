@@ -17,4 +17,5 @@ class PortfolioItem(models.Model):
         ordering = ('-created_at',)
 
     def __str__(self):
+        """Возвращает название работы."""
         return self.title
