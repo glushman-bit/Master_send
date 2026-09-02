@@ -33,17 +33,41 @@ class OrderTestCase(APITestCase):
         data.update(overrides)
         return self.client.post('/api/orders/', data, format='json')
 
-    def test_anon_can_create_order(self):
+    def test_anon_cannot_create_order(self):
         res = self.post_order()
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(OrderRequest.objects.count(), 1)
-        self.assertIsNone(res.data['user'])
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(OrderRequest.objects.count(), 0)
 
     def test_auth_client_can_create_order(self):
         self.client.force_authenticate(self.client_user)
         res = self.post_order()
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(res.data['user'], self.client_user.id)
+
+    def test_master_cannot_create_order(self):
+        self.client.force_authenticate(self.master)
+        res = self.post_order()
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(OrderRequest.objects.count(), 0)
+
+    def test_superuser_cannot_create_order(self):
+        admin = User.objects.create_superuser(
+            username='admin', password='Pass123!', email='admin@mail.ru'
+        )
+        self.client.force_authenticate(admin)
+        res = self.post_order()
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(OrderRequest.objects.count(), 0)
+
+    def test_model_rejects_master_user(self):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        from orders.models import OrderRequest as OR
+        order = OR(
+            name='Иван', phone='+70000000000', message='xxx',
+            service=self.service, user=self.master,
+        )
+        with self.assertRaises(DjangoValidationError):
+            order.full_clean()
 
     def test_client_sees_only_own_orders(self):
         self.client.force_authenticate(self.client_user)
@@ -57,10 +81,11 @@ class OrderTestCase(APITestCase):
         self.assertEqual(res.data['count'], 1)
 
     def test_master_sees_all_orders(self):
+        self.client.force_authenticate(self.client_user)
         self.post_order()
         OrderRequest.objects.create(
             name='Другой', phone='+70000000000', message='xxx', service=self.service,
-            user=self.master,
+            user=self.client_user,
         )
         self.client.force_authenticate(self.master)
         res = self.client.get('/api/orders/')
@@ -68,6 +93,7 @@ class OrderTestCase(APITestCase):
         self.assertEqual(res.data['count'], 2)
 
     def test_master_can_update_status(self):
+        self.client.force_authenticate(self.client_user)
         self.post_order()
         order = OrderRequest.objects.first()
         self.client.force_authenticate(self.master)
@@ -77,9 +103,9 @@ class OrderTestCase(APITestCase):
         self.assertEqual(order.status, OrderRequest.Status.IN_PROGRESS)
 
     def test_client_cannot_update_status(self):
+        self.client.force_authenticate(self.client_user)
         self.post_order()
         order = OrderRequest.objects.first()
-        self.client.force_authenticate(self.client_user)
         res = self.client.post(f'/api/orders/{order.id}/status/', {'status': 'progress'}, format='json')
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -88,10 +114,12 @@ class OrderTestCase(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_stats_master(self):
+        self.client.force_authenticate(self.client_user)
         self.post_order()
         self.post_order()
         OrderRequest.objects.create(
             name='Другой', phone='+70000000000', message='xxx', service=self.service,
+            user=self.client_user,
             status=OrderRequest.Status.IN_PROGRESS,
         )
         self.client.force_authenticate(self.master)
@@ -108,9 +136,11 @@ class OrderTestCase(APITestCase):
         self.assertEqual(self.client.get('/api/orders/stats/').status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_status_filter(self):
+        self.client.force_authenticate(self.client_user)
         self.post_order()
         OrderRequest.objects.create(
             name='В работе', phone='+70000000000', message='xxx', service=self.service,
+            user=self.client_user,
             status=OrderRequest.Status.IN_PROGRESS,
         )
         self.client.force_authenticate(self.master)
