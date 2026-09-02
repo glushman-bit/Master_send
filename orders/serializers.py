@@ -13,6 +13,14 @@ class OrderRequestSerializer(serializers.ModelSerializer):
                   'created_at', 'updated_at')
         read_only_fields = ('id', 'user', 'status', 'created_at', 'updated_at')
 
+    def validate(self, data):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request else None
+        instance = OrderRequest(**data)
+        instance.user = user
+        instance.full_clean()
+        return data
+
 
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
