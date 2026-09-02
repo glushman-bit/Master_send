@@ -10,6 +10,45 @@
     </div>
 </div>
 
+<!-- Модальное окно редактирования профиля -->
+<div id="profileModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+    <div class="modal profile-modal">
+        <button type="button" class="modal-close js-profile-close" aria-label="Закрыть">&times;</button>
+        <div class="auth-header">
+            <h2 id="profileModalTitle">Редактировать профиль</h2>
+            <p class="muted">Обновите данные и измените аватар</p>
+        </div>
+        <form id="profileForm" enctype="multipart/form-data">
+            <div class="avatar-edit">
+                <div class="avatar-preview-wrap" id="avatarPreviewWrap">
+                    <img class="avatar-preview-img hidden" id="avatarPreviewImg" alt="Аватар">
+                    <span class="avatar-preview-initials" id="avatarPreviewInitials">?</span>
+                </div>
+                <label class="btn btn-ghost btn-sm profile-edit-btn" for="avatarInput">Сменить аватар</label>
+                <input class="avatar-file" id="avatarInput" type="file" name="avatar" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>Имя</label>
+                <input class="form-input" name="first_name" required maxlength="150">
+            </div>
+            <div class="form-group">
+                <label>Фамилия</label>
+                <input class="form-input" name="last_name" maxlength="150">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input class="form-input" name="email" type="email" required maxlength="254">
+            </div>
+            <div class="form-group">
+                <label>Телефон</label>
+                <input class="form-input" name="phone" maxlength="20">
+            </div>
+            <div class="form-error hidden js-profile-error"></div>
+            <button type="submit" class="btn btn-primary btn-block">Сохранить</button>
+        </form>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -26,11 +65,15 @@ $(async function() {
     let html = `
         <div class="profile-layout">
             <aside class="profile-card">
-                <div class="profile-avatar">${user.initials}</div>
+                ${user.avatar
+                    ? `<img class="profile-avatar-img" src="${user.avatar}" alt="Аватар">`
+                    : `<div class="profile-avatar">${user.initials}</div>`}
                 <h2>${user.first_name || ''} ${user.last_name || ''}</h2>
                 <span class="role-badge">${user.role === 'master' ? 'Мастер' : 'Клиент'}</span>
                 <p class="muted">${user.email || ''}</p>
                 ${user.phone ? `<p class="muted">📞 ${user.phone}</p>` : ''}
+                <br>
+                <button type="button" class="btn btn-ghost profile-edit-btn js-profile-edit">Редактировать профиль</button>
             </aside>
             <section>
                 ${user.is_master ? `
@@ -45,28 +88,6 @@ $(async function() {
                         <div id="ordersList"><p class="muted">Загрузка...</p></div>
                     </div>
                 `}
-                <div class="card" style="margin-top: 20px;">
-                    <h3>Редактировать профиль</h3>
-                    <form id="profileForm">
-                        <div class="form-group">
-                            <label>Имя</label>
-                            <input class="form-input" name="first_name" value="${user.first_name || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Фамилия</label>
-                            <input class="form-input" name="last_name" value="${user.last_name || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input class="form-input" name="email" type="email" value="${user.email || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Телефон</label>
-                            <input class="form-input" name="phone" value="${user.phone || ''}">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Сохранить</button>
-                    </form>
-                </div>
             </section>
         </div>
     `;
@@ -97,16 +118,85 @@ $(async function() {
         }
     }
 
-    // Сохранение профиля
-    $('#profileForm').on('submit', async function(e) {
+    // ===== Модальное окно редактирования профиля =====
+    const $modal = $('#profileModal');
+    const $form = $('#profileForm');
+
+    function openProfileModal() {
+        $form.trigger('reset');
+        $form.find('.js-profile-error').text('').addClass('hidden');
+        $('#avatarInput').val('');
+        $('#avatarPreviewImg').addClass('hidden').attr('src', '');
+        $('#avatarPreviewInitials').removeClass('hidden').text(user.initials);
+        $form.find('[name="first_name"]').val(user.first_name || '');
+        $form.find('[name="last_name"]').val(user.last_name || '');
+        $form.find('[name="email"]').val(user.email || '');
+        $form.find('[name="phone"]').val(user.phone || '');
+        if (user.avatar) {
+            $('#avatarPreviewImg').attr('src', user.avatar).removeClass('hidden');
+            $('#avatarPreviewInitials').addClass('hidden');
+        }
+        $modal.removeClass('hidden');
+        $('body').addClass('modal-open');
+    }
+
+    function closeProfileModal() {
+        $modal.addClass('hidden');
+        $('body').removeClass('modal-open');
+    }
+
+    $(document).on('click', '.js-profile-edit', openProfileModal);
+    $(document).on('click', '.js-profile-close', closeProfileModal);
+    $(document).on('mousedown', '.modal-overlay', function(e) {
+        if (e.target === this) closeProfileModal();
+    });
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') closeProfileModal();
+    });
+
+    // Предпросмотр нового аватара
+    $('#avatarInput').on('change', function() {
+        const file = this.files && this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#avatarPreviewImg').attr('src', e.target.result).removeClass('hidden');
+                $('#avatarPreviewInitials').addClass('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Сохранение профиля (multipart, чтобы передать аватар)
+    $form.on('submit', async function(e) {
         e.preventDefault();
-        const data = Object.fromEntries(new FormData(this));
+        const $btn = $form.find('button[type=submit]');
+        const $err = $form.find('.js-profile-error');
+        $err.text('').addClass('hidden');
+        $btn.prop('disabled', true).text('Сохранение...');
+
+        const data = new FormData(this);
         try {
-            const updated = await API.patch('/auth/me/', data);
+            const updated = await API.patch('/auth/me/', data, true);
             API.setAuth(API.tokens, {...API.user, ...updated});
+            const newUser = API.user;
+            if (newUser.avatar) {
+                let $img = $('#cabinetContent .profile-avatar-img');
+                if (!$img.length) {
+                    $('#cabinetContent .profile-card').find('.profile-avatar, .profile-avatar-img').remove();
+                    $('#cabinetContent .profile-card').prepend(
+                        `<img class="profile-avatar-img" src="${newUser.avatar}" alt="Аватар">`
+                    );
+                } else {
+                    $img.attr('src', newUser.avatar);
+                }
+            }
+            closeProfileModal();
             showToast('Профиль обновлён');
         } catch (err) {
-            showToast(err.message, 'error');
+            $err.text(err.message || 'Не удалось сохранить').removeClass('hidden');
+        } finally {
+            $btn.prop('disabled', false).text('Сохранить');
         }
     });
 });

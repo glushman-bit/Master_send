@@ -34,11 +34,13 @@
                         </svg>
                         <span class="admin-bell-badge hidden" id="adminBellBadge">0</span>
                     </a>
-                    <a href="{% url 'core:cabinet' %}" class="user-chip">
-                        <span class="user-avatar js-user-initials">?</span>
-                        <span class="user-name js-user-name">...</span>
-                    </a>
-                    <button class="btn btn-ghost js-logout">Выйти</button>
+                    <div class="user-actions">
+                        <a href="{% url 'core:cabinet' %}" class="user-chip">
+                            <span class="user-avatar js-user-initials">?</span>
+                            <span class="user-name js-user-name">...</span>
+                        </a>
+                        <button class="user-logout js-logout" title="Выйти">Выйти</button>
+                    </div>
                 </div>
             </div>
         </div>

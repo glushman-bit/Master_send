@@ -71,6 +71,11 @@ $(function() {
             $('.js-user-name').text(user.first_name || user.username);
             $('.js-user-initials').text(user.initials);
             $('.js-user-role').text(user.role === 'master' ? 'Мастер' : 'Клиент');
+            if (user.avatar) {
+                $('.user-chip .user-avatar').html(`<img class="mini-avatar" src="${user.avatar}" alt="">`);
+            } else {
+                $('.user-chip .user-avatar').text(user.initials);
+            }
         } else {
             $('.js-guest-only').removeClass('hidden');
             $('.js-auth-only').addClass('hidden');
