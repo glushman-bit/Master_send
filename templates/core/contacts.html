@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Контакты — Мастерская{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <h1>Контакты</h1>
+        <p class="hero-subtitle">Оставьте заявку — мы свяжемся с вами в течение рабочего дня</p>
+    </div>
+</section>
+
+<section class="container section">
+    <div class="contact-layout">
+        <div class="contact-info">
+            <div class="card">
+                <h3>Наши контакты</h3>
+                <p class="muted">📞 Телефон: <a href="tel:+70000000000">+7 (000) 000-00-00</a></p>
+                <p class="muted">✉️ Email: <a href="mailto:info@master-send.ru">info@master-send.ru</a></p>
+                <p class="muted">📍 Адрес: г. Москва, ул. Мастеровая, д. 1</p>
+                <p class="muted">🕘 Режим работы: Пн–Сб, с 10:00 до 19:00</p>
+            </div>
+        </div>
+
+        <div class="card order-form-card js-add-order-only">
+            <h2>Заявка на расчёт</h2>
+            <p class="muted">Расскажите о задаче — пришлём предварительный расчёт и сроки</p>
+
+            <form id="orderForm">
+                <div class="form-group">
+                    <label for="orderName">Ваше имя</label>
+                    <input class="form-input" id="orderName" name="name" required maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label for="orderPhone">Телефон</label>
+                    <input class="form-input" id="orderPhone" name="phone" type="tel" required maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label for="orderEmail">Email (необязательно)</label>
+                    <input class="form-input" id="orderEmail" name="email" type="email" maxlength="254">
+                </div>
+                <div class="form-group">
+                    <label for="orderService">Услуга</label>
+                    <select class="form-input contact-select" id="orderService" name="service">
+                        <option value="">— Выберите услугу —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="orderMessage">Описание задачи</label>
+                    <textarea class="form-input" id="orderMessage" name="message" required></textarea>
+                </div>
+                <div class="form-error hidden js-error"></div>
+                <button type="submit" class="btn btn-primary btn-block">Отправить заявку</button>
+            </form>
+        </div>
+
+        <div class="card order-form-card js-order-blocked hidden">
+            <h2>Заявка на расчёт</h2>
+            <p class="muted">Расскажите о задаче — пришлём предварительный расчёт и сроки</p>
+            <div class="order-blocked-note">
+                <p>Для оставления заявки на расчёт необходимо <strong>авторизоваться</strong>.</p>
+                <div class="hero-actions">
+                    <a href="#" class="btn btn-primary js-open-login">Войти</a>
+                    <a href="#" class="btn btn-ghost js-open-register">Регистрация</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(async function() {
+    try {
+        const data = await API.get('/services/');
+        const list = data.results || data;
+        list.forEach(s => {
+            $('#orderService').append(`<option value="${s.id}">${s.title}</option>`);
+        });
+    } catch (e) {}
+
+    $('#orderForm').on('submit', async function(e) {
+        e.preventDefault();
+        const $form = $(this);
+        const $btn = $form.find('button[type=submit]');
+        const $err = $form.find('.js-error');
+        $err.text('').addClass('hidden');
+        $btn.prop('disabled', true).text('Отправка...');
+
+        const data = Object.fromEntries(new FormData(this));
+        if (!data.service) data.service = null;
+
+        try {
+            await API.post('/orders/', data);
+            showToast('Заявка отправлена! Мы свяжемся с вами.');
+            $form.trigger('reset');
+        } catch (err) {
+            $err.text(extractError(err)).removeClass('hidden');
+        } finally {
+            $btn.prop('disabled', false).text('Отправить заявку');
+        }
+    });
+
+    function extractError(err) {
+        if (err.data) {
+            for (const key in err.data) {
+                const val = err.data[key];
+                if (Array.isArray(val)) return val[0];
+                if (typeof val === 'string') return val;
+            }
+        }
+        return err.message || 'Не удалось отправить заявку';
+    }
+});
+</script>
+{% endblock %}
