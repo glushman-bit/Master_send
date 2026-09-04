@@ -99,6 +99,20 @@ class AuthTestCase(APITestCase):
         }, format='json')
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_login_deactivated_user_rejected(self):
+        """Деактивированный пользователь не может войти даже с верным паролем."""
+        self.register()
+        user = User.objects.get(username='ivan')
+        user.is_active = False
+        user.save()
+
+        res = self.client.post('/api/auth/login/', {
+            'username': 'ivan',
+            'password': 'StrongPass123!',
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertNotIn('access', res.data.get('tokens', {}))
+
     def test_me_requires_auth(self):
         """Получение профиля требует авторизации."""
         res = self.client.get('/api/auth/me/')
@@ -111,6 +125,33 @@ class AuthTestCase(APITestCase):
         res = self.client.get('/api/auth/me/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data['username'], 'ivan')
+
+    def test_profile_update_rejects_duplicate_email(self):
+        """Обновление профиля отклоняет email, занятый другим пользователем."""
+        self.register()
+        User.objects.create_user(
+            username='petr', password='Pass123!', email='petr@example.com'
+        )
+        tokens = self.client.post('/api/auth/login/', {
+            'username': 'petr', 'password': 'Pass123!',
+        }, format='json').data['tokens']
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+
+        res = self.client.patch('/api/auth/me/', {
+            'email': 'IVAN@example.com',
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', res.data)
+
+    def test_profile_update_keeps_own_email(self):
+        """Пользователь может оставить свой email неизменным при обновлении."""
+        tokens = self.register().data['tokens']
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+        res = self.client.patch('/api/auth/me/', {
+            'email': 'ivan@example.com',
+            'first_name': 'Иван',
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_change_password(self):
         """Смена пароля работает, после неё вход с новым паролем возможен."""
