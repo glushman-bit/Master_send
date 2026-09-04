@@ -248,7 +248,7 @@ $(function() {
     }
 
     async function refreshOrders(status) {
-        const url = status === 'all' ? '/orders/' : '/orders/?status=' + status;
+        const url = status === 'all' ? '/orders/?page_size=1000' : '/orders/?status=' + status + '&page_size=1000';
         const $list = $('#adminOrdersList');
         try {
             const data = await API.get(url);
