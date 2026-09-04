@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 
 def home_view(request):
@@ -27,5 +27,7 @@ def cabinet_view(request):
 
 
 def admin_panel_view(request):
-    """Панель администратора — управление заявками и статистика."""
+    """Панель администратора — только для мастеров/администраторов."""
+    if not (request.user.is_authenticated and request.user.is_master):
+        return redirect('core:home')
     return render(request, 'core/admin_panel.html')
