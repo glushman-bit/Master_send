@@ -5,7 +5,7 @@
     --surface-2: #f1f5f9;
     --surface-3: #e5ecf5;
     --text: #0f172a;
-    --text-muted: #64748b;
+    --text-muted: #000000;
     --accent: #f59e0b;
     --accent-hover: #d97706;
     --accent-light: rgba(245, 158, 11, 0.12);
@@ -29,7 +29,9 @@ html, body { margin: 0; min-height: 100%; }
 html { scroll-behavior: smooth; }
 body {
     font-family: var(--font);
-    background: var(--bg);
+    background:
+        linear-gradient(rgba(248, 250, 252, 0.55) 0%, rgba(255, 255, 255, 0.62) 100%),
+        url('../img/melnica-bg.jpg') center / cover no-repeat fixed;
     color: var(--text);
     line-height: 1.4;
     overflow-x: hidden;
@@ -172,10 +174,8 @@ img { max-width: 100%; display: block; }
 /* ===== Hero ===== */
 .hero {
     position: relative;
-    padding: 72px 0 56px;
-    background:
-        radial-gradient(900px 400px at 85% -10%, rgba(245, 158, 11, 0.10), transparent 60%),
-        linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+    padding: 96px 0 68px;
+    background: transparent;
     text-align: center;
     border-bottom: 1px solid var(--border);
 }
@@ -184,7 +184,7 @@ img { max-width: 100%; display: block; }
     letter-spacing: -0.03em; line-height: 1.02;
     margin: 0 0 20px;
 }
-.hero-subtitle { max-width: 560px; margin: 0 auto 32px; color: var(--text-muted); font-size: 17px; line-height: 1.6; }
+.hero-subtitle { max-width: 560px; margin: 0 auto 32px; color: var(--text-muted); font-size: 20px; line-height: 1.6; }
 .hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 .hero-label {
     display: inline-block;
@@ -642,6 +642,7 @@ textarea.form-input { resize: vertical; min-height: 90px; }
     .service-row .service-price { display: none; }
 }
 @media (max-width: 640px) {
+    body { background-attachment: scroll; }
     .header-inner { gap: 12px; }
     .user-name { display: none; }
     .logo-text { display: none; }
