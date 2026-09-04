@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Наши работы — Мастерская{% endblock %}
+{% block title %}Работы — MasterBlast{% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="hero hero-inner">
     <div class="container">
-        <h1>Наши работы</h1>
+        <div class="hero-label">MasterBlast</div>
+        <h1>Работы</h1>
         <p class="hero-subtitle">До и после. Качество видно глазами</p>
     </div>
 </section>
@@ -65,8 +66,10 @@ $(async function() {
             <div class="work-photos">
                 <figure class="work-photo">
                     <figcaption>До</figcaption>
-                    <img src="${p.image_before}" alt="${p.title} — до"
-                         onerror="this.parentElement.classList.add('image-error')">
+                    ${p.image_before
+                        ? `<img src="${p.image_before}" alt="${p.title} — до"
+                             onerror="this.parentElement.classList.add('image-error')">`
+                        : '<div class="image-error">Фото «до» отсутствует</div>'}
                 </figure>
                 <figure class="work-photo">
                     <figcaption>После</figcaption>
