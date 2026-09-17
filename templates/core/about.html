@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}О нас — MasterBlast{% endblock %}
+
+{% block content %}
+<section class="hero hero-inner">
+    <div class="container">
+        <div class="hero-label">MasterBlast</div>
+        <h1>О нас</h1>
+        <p class="hero-subtitle">Кто мы и чем занимаемся</p>
+    </div>
+</section>
+
+<section class="container section">
+    <div id="aboutContent" class="about-page">
+        <p class="muted">Загрузка...</p>
+    </div>
+</section>
+
+<!-- Увеличенное фото (левая кнопка мыши) -->
+<div id="aboutZoom" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <button type="button" class="modal-close js-about-zoom-close" aria-label="Закрыть">&times;</button>
+    <img id="aboutZoomImg" class="zoom-image" alt="Увеличенное фото">
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(async function() {
+    function esc(s) {
+        if (s === null || s === undefined) return '';
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    try {
+        const data = await API.get('/about/');
+        const $box = $('#aboutContent').empty();
+        const imgs = (data.images || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        if (data.description && data.description.trim()) {
+            $box.append('<div class="about-desc card">' + esc(data.description).replace(/\n/g, '<br>') + '</div>');
+        }
+        if (imgs.length) {
+            const grid = '<div class="about-images">' +
+                imgs.map(im =>
+                    '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loading="lazy" onerror="this.classList.add(\'img-broken\')">'
+                ).join('') +
+                '</div>';
+            $box.append(grid);
+        }
+        if (!$box.children().length) {
+            $box.html('<p class="muted">Раздел наполняется. Загляните позже.</p>');
+        }
+    } catch (e) {
+        $('#aboutContent').html('<p class="muted">Не удалось загрузить информацию.</p>');
+    }
+
+    const $zoom = $('#aboutZoom');
+    function openZoom(url) {
+        if (!url) return;
+        $('#aboutZoomImg').attr('src', url);
+        $zoom.removeClass('hidden');
+        $('body').addClass('modal-open');
+    }
+    function closeZoom() {
+        $zoom.addClass('hidden');
+        $('body').removeClass('modal-open');
+    }
+    $(document).on('click', '.about-image', function() { openZoom($(this).attr('src')); });
+    $(document).on('click', '.js-about-zoom-close', closeZoom);
+    $(document).on('click', '#aboutZoom', function(e) { if (e.target === this) closeZoom(); });
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && !$zoom.hasClass('hidden')) closeZoom();
+    });
+});
+</script>
+{% endblock %}

@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MasterBlast — Пескоструй • Порошковая покраска • Сварка{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=16">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=17">
 </head>
 <body>
     <header class="site-header" id="siteHeader">
@@ -15,6 +15,7 @@
             <nav class="main-nav">
                 <a href="{% url 'core:portfolio' %}">Наши работы</a>
                 <a href="{% url 'core:services' %}">Типы работ</a>
+                <a href="{% url 'core:about' %}">О нас</a>
                 <a href="{% url 'core:contacts' %}">Контакты</a>
                 <a href="{% url 'core:admin_panel' %}" class="js-admin-link hidden">Администрирование</a>
             </nav>
@@ -54,6 +55,7 @@
             <div class="footer-links">
                 <a href="{% url 'core:services' %}">Услуги</a>
                 <a href="{% url 'core:portfolio' %}">Работы</a>
+                <a href="{% url 'core:about' %}">О нас</a>
                 <a href="{% url 'core:contacts' %}">Контакты</a>
             </div>
         </div>

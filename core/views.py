@@ -16,6 +16,11 @@ def portfolio_view(request):
     return render(request, 'core/portfolio.html')
 
 
+def about_view(request):
+    """Страница «О нас»."""
+    return render(request, 'core/about.html')
+
+
 def contacts_view(request):
     """Страница «Контакты» с формой заявки на расчёт."""
     return render(request, 'core/contacts.html')

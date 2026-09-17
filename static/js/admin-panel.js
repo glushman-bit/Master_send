@@ -55,6 +55,7 @@ $(function() {
             refreshUsers(),
             refreshWorks(),
             refreshServices(),
+            refreshAbout(),
         ]);
     }
 
@@ -625,6 +626,96 @@ $(function() {
                 }
             }
         );
+    });
+
+    /* ============ О нас ============ */
+    var aboutState = { id: null, images: [], removed: [], newFiles: [] };
+
+    function renderAboutImages() {
+        const items = [];
+        aboutState.images.forEach(function(im) {
+            if (aboutState.removed.indexOf(im.id) !== -1) return;
+            items.push('<div class="work-img-item">' +
+                '<img src="' + esc(im.image) + '" alt="">' +
+                '<button type="button" class="work-img-remove" data-kind="about" data-old-id="' + im.id + '" aria-label="Удалить фото">&times;</button></div>');
+        });
+        aboutState.newFiles.forEach(function(f, idx) {
+            items.push('<div class="work-img-item work-img-new">' +
+                '<img src="' + URL.createObjectURL(f) + '" alt="">' +
+                '<button type="button" class="work-img-remove" data-kind="about" data-new-idx="' + idx + '" aria-label="Удалить фото">&times;</button></div>');
+        });
+        $('#aboutImgList').html(items.join(''));
+    }
+
+    async function refreshAbout() {
+        try {
+            const data = await API.get('/admin/about/');
+            aboutState = { id: data.id, images: data.images || [], removed: [], newFiles: [] };
+            $('#aboutDescription').val(data.description || '');
+            $('#aboutPublished').prop('checked', !!data.is_published);
+            renderAboutImages();
+        } catch (e) {
+            showToast('Не удалось загрузить «О нас».', 'error');
+        }
+    }
+
+    $('#aboutImgInput').on('change', function() {
+        const files = Array.prototype.slice.call(this.files || []);
+        if (files.length) {
+            aboutState.newFiles.push.apply(aboutState.newFiles, files);
+        }
+        this.value = '';
+        renderAboutImages();
+    });
+
+    $(document).on('click', '.work-img-remove', function() {
+        const kind = $(this).data('kind');
+        const oldId = $(this).data('old-id');
+        if (kind === 'about') {
+            if (oldId !== undefined) {
+                aboutState.removed.push(oldId);
+            } else {
+                aboutState.newFiles.splice($(this).data('new-idx'), 1);
+            }
+            renderAboutImages();
+        }
+    });
+
+    $(document).on('click', '.js-about-save', async function() {
+        const $btn = $(this);
+        const $err = $('.js-about-error');
+        $err.text('').addClass('hidden');
+
+        const data = new FormData();
+        data.append('description', $('#aboutDescription').val() || '');
+        data.append('is_published', $('#aboutPublished').is(':checked') ? 'true' : 'false');
+        aboutState.newFiles.forEach(function(f) {
+            data.append('images', f, f.name);
+        });
+        if (aboutState.removed.length) {
+            data.append('remove_images', JSON.stringify(aboutState.removed));
+        }
+
+        $btn.prop('disabled', true).text('Сохранение...');
+        try {
+            await API.put('/admin/about/', data, true);
+            showToast('«О нас» сохранено');
+            aboutState.newFiles = [];
+            aboutState.removed = [];
+            refreshAbout();
+        } catch (err) {
+            let msg = err.message || 'Не удалось сохранить';
+            if (err.data) {
+                for (const key in err.data) {
+                    const v = err.data[key];
+                    if (Array.isArray(v)) { msg = v[0]; break; }
+                    if (typeof v === 'string') { msg = v; break; }
+                }
+            }
+            $err.text(msg).removeClass('hidden');
+        } finally {
+            $btn.prop('disabled', false).text('Сохранить «О нас»');
+        }
     });
 
     /* ===== Закрытие модалок по оверлею и Escape ===== */

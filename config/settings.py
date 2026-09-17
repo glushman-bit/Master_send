@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # own application
+    'about',
     'core',
     'orders',
     'portfolio',

@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 
 from portfolio.views import PortfolioAdminViewSet
 from services.views import ServiceAdminViewSet
+from about.views import AdminAboutView
 
 
 admin_router = DefaultRouter()
@@ -21,6 +22,8 @@ urlpatterns = [
     path('api/services/', include('services.urls')),
     path('api/portfolio/', include('portfolio.urls')),
     path('api/orders/', include('orders.urls')),
+    path('api/about/', include('about.urls')),
+    path('api/admin/about/', AdminAboutView.as_view(), name='admin-about'),
     path('api/admin/', include(admin_router.urls)),
 
     # Страницы
