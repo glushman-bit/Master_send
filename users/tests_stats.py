@@ -37,16 +37,36 @@ class UserStatsTestCase(APITestCase):
         self.assertIn('new_month', res.data)
         self.assertIn('active_week', res.data)
 
-    def test_client_can_access_stats(self):
-        """Клиент также может получать статистику пользователей."""
+    def test_client_cannot_access_stats(self):
+        """Клиент не может получать статистику пользователей."""
         self.client.force_authenticate(self.client_user)
         res = self.client.get('/api/auth/stats/')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_master_can_access_stats(self):
+        """Мастер может получать статистику пользователей."""
+        self.client.force_authenticate(self.master)
+        res = self.client.get('/api/auth/stats/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['total'], 3)
 
     def test_user_list_requires_auth(self):
         """Список пользователей требует авторизации."""
         res = self.client.get('/api/auth/users/')
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_user_list_forbidden_for_client(self):
+        """Клиент не может получать список пользователей."""
+        self.client.force_authenticate(self.client_user)
+        res = self.client.get('/api/auth/users/')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_master_can_list_users(self):
+        """Мастер может получать список пользователей."""
+        self.client.force_authenticate(self.master)
+        res = self.client.get('/api/auth/users/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 3)
 
     def test_user_list_returns_order_counts(self):
         """Список пользователей возвращает количества заказов по статусам."""

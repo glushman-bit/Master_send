@@ -15,7 +15,7 @@ const API = {
 
     isLoggedIn() { return !!this.tokens?.access; },
 
-    async request(method, url, data, isFormData = false) {
+    async request(method, url, data, isFormData = false, retried = false) {
         const opts = {
             method,
             headers: {},
@@ -37,10 +37,10 @@ const API = {
         try { json = text ? JSON.parse(text) : null; } catch (e) {}
 
         if (!res.ok) {
-            // Попробовать обновить токен при 401 (кроме самого refresh-эндпоинта)
-            if (res.status === 401 && this.tokens?.refresh && url !== '/auth/refresh/') {
+            // Попробовать обновить токен при 401 (кроме самого refresh-эндпоинта), но только один раз.
+            if (res.status === 401 && !retried && this.tokens?.refresh && url !== '/auth/refresh/') {
                 const refreshed = await this.refreshAccessToken();
-                if (refreshed) return this.request(method, url, data, isFormData);
+                if (refreshed) return this.request(method, url, data, isFormData, true);
             }
             const err = new Error(json?.detail || json?.non_field_errors?.[0] || 'Ошибка запроса');
             err.status = res.status;

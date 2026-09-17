@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Личный кабинет — Мастерская{% endblock %}
+{% block title %}Личный кабинет — MasterBlast{% endblock %}
 
 {% block content %}
 
@@ -69,7 +69,7 @@ $(async function() {
                     ? `<img class="profile-avatar-img" src="${user.avatar}" alt="Аватар">`
                     : `<div class="profile-avatar">${user.initials}</div>`}
                 <h2>${user.first_name || ''} ${user.last_name || ''}</h2>
-                <span class="role-badge">${user.role === 'master' ? 'Мастер' : 'Клиент'}</span>
+                <span class="role-badge">${user.is_master ? (user.role === 'master' ? 'Мастер' : 'Администратор') : 'Клиент'}</span>
                 <p class="muted">${user.email || ''}</p>
                 ${user.phone ? `<p class="muted">📞 ${user.phone}</p>` : ''}
                 <br>

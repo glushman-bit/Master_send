@@ -1,19 +1,20 @@
 {% extends 'base.html' %}
-{% block title %}Услуги — Мастерская{% endblock %}
+{% block title %}Типы работ — MasterBlast{% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="hero hero-inner">
     <div class="container">
-        <h1>Наши услуги</h1>
-        <p class="hero-subtitle">Пескоструйная обработка, порошковая покраска и сварочные работы</p>
+        <div class="hero-label">MasterBlast</div>
+        <h1>Типы работ</h1>
+        <p class="hero-subtitle">Пескоструйная обработка, порошковая покраска и сварочные работы под ключ</p>
     </div>
 </section>
 
 <section class="container section">
-    <div id="servicesGrid" class="services-grid">
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
+    <div id="servicesList" class="services-list">
+        <div class="service-row skeleton-row"></div>
+        <div class="service-row skeleton-row"></div>
+        <div class="service-row skeleton-row"></div>
     </div>
 </section>
 {% endblock %}
@@ -24,23 +25,25 @@ $(async function() {
     try {
         const data = await API.get('/services/');
         const list = data.results || data;
-        const $grid = $('#servicesGrid').empty();
+        const $list = $('#servicesList').empty();
         if (!list.length) {
-            $grid.html('<p class="muted">Услуги скоро появятся.</p>');
+            $list.html('<p class="muted">Услуги скоро появятся.</p>');
             return;
         }
-        list.forEach(s => {
-            $grid.append(`
-                <div class="service-card">
-                    <div class="service-icon">${s.icon || '⚙'}</div>
-                    <h3>${s.title}</h3>
-                    <p>${s.description}</p>
+        list.forEach((s, i) => {
+            $list.append(`
+                <div class="service-row">
+                    <div class="service-num">${String(i + 1).padStart(2, '0')}</div>
+                    <div class="service-body">
+                        <div class="service-name">${s.title}</div>
+                        <div class="service-desc">${s.description}</div>
+                    </div>
                     <div class="service-price">от <strong>${s.price_from} ₽</strong> ${s.price_unit}</div>
                 </div>
             `);
         });
     } catch (e) {
-        $('#servicesGrid').html('<p class="muted">Не удалось загрузить услуги.</p>');
+        $('#servicesList').html('<p class="muted">Не удалось загрузить услуги.</p>');
     }
 });
 </script>

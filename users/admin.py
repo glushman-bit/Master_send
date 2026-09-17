@@ -12,3 +12,6 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets + (
         ('Дополнительно', {'fields': ('role', 'phone', 'avatar', 'bio')}),
     )
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        ('Дополнительно', {'fields': ('role', 'phone', 'bio')}),
+    )

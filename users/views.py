@@ -1,10 +1,16 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
+from django.db.models import Count, Q
+from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from core.permissions import IsMaster
+from orders.models import OrderRequest
 from .serializers import (
     UserSerializer, RegisterSerializer,
     ChangePasswordSerializer, ProfileUpdateSerializer,
@@ -63,7 +69,8 @@ class LoginView(APIView):
         else:
             user = User.objects.filter(username__iexact=username).first()
 
-        if not user or not user.check_password(password):
+        # Пароль неверный ИЛИ аккаунт деактивирован — одинаковый ответ (не раскрываем деталей).
+        if not user or not user.is_active or not user.check_password(password):
             return Response(
                 {'detail': 'Неверный логин или пароль.'},
                 status=status.HTTP_401_UNAUTHORIZED,
@@ -122,15 +129,11 @@ class LogoutView(APIView):
 
 
 class UserStatsView(APIView):
-    """Статистика пользователей для панели администратора."""
-    permission_classes = (permissions.IsAuthenticated,)
+    """Статистика пользователей для панели администратора (только для мастеров)."""
+    permission_classes = (IsMaster,)
 
     def get(self, request):
         """Возвращает сводную статистику по пользователям для панели администратора."""
-        from django.db.models import Q
-        from django.utils import timezone
-        from datetime import timedelta
-
         now = timezone.now()
         month_ago = now - timedelta(days=30)
 
@@ -150,20 +153,17 @@ class UserStatsView(APIView):
 
 
 class UserListView(APIView):
-    """Список пользователей с количеством заказов по статусам (для панели администратора)."""
-    permission_classes = (permissions.IsAuthenticated,)
+    """Список пользователей с количеством заказов по статусам (только для мастеров)."""
+    permission_classes = (IsMaster,)
 
     def get(self, request):
         """Возвращает список пользователей с количеством заказов по статусам."""
-        from django.db.models import Count, Q
-        from orders.models import OrderRequest
-
         users = User.objects.annotate(
-            _orders_total=Count('orders'),
-            _orders_new=Count('orders', filter=Q(orders__status=OrderRequest.Status.NEW)),
-            _orders_progress=Count('orders', filter=Q(orders__status=OrderRequest.Status.IN_PROGRESS)),
-            _orders_done=Count('orders', filter=Q(orders__status=OrderRequest.Status.DONE)),
-            _orders_cancelled=Count('orders', filter=Q(orders__status=OrderRequest.Status.CANCELLED)),
+            orders_total=Count('orders'),
+            orders_new=Count('orders', filter=Q(orders__status=OrderRequest.Status.NEW)),
+            orders_progress=Count('orders', filter=Q(orders__status=OrderRequest.Status.IN_PROGRESS)),
+            orders_done=Count('orders', filter=Q(orders__status=OrderRequest.Status.DONE)),
+            orders_cancelled=Count('orders', filter=Q(orders__status=OrderRequest.Status.CANCELLED)),
         ).order_by('-date_joined')
 
         result = []
@@ -181,11 +181,11 @@ class UserListView(APIView):
                 'date_joined': u.date_joined,
                 'is_master': u.is_master,
                 'orders': {
-                    'total': u._orders_total,
-                    'new': u._orders_new,
-                    'progress': u._orders_progress,
-                    'done': u._orders_done,
-                    'cancelled': u._orders_cancelled,
+                    'total': u.orders_total,
+                    'new': u.orders_new,
+                    'progress': u.orders_progress,
+                    'done': u.orders_done,
+                    'cancelled': u.orders_cancelled,
                 },
             })
 

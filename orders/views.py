@@ -1,27 +1,13 @@
+from django.conf import settings
+from django.core.mail import send_mail
 from django.db.models import Count
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from core.permissions import IsMaster, IsNotMaster
 from .models import OrderRequest
 from .serializers import OrderRequestSerializer, OrderStatusUpdateSerializer
-
-
-class IsMaster(permissions.BasePermission):
-    """Разрешает доступ только авторизованным мастерам."""
-
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated and request.user.is_master
-
-
-class IsNotMaster(permissions.BasePermission):
-    """Запрещает создавать заявки мастерам и администраторам."""
-    message = 'Мастер не может оставлять заявки на работу.'
-
-    def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return True
-        return not request.user.is_master
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -56,9 +42,33 @@ class OrderViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        """Сохраняет заявку, привязывая текущего авторизованного пользователя."""
+        """Сохраняет заявку, привязывая текущего авторизованного пользователя, и шлёт уведомление."""
         user = self.request.user if self.request.user.is_authenticated else None
-        serializer.save(user=user)
+        order = serializer.save(user=user)
+        self._notify(order)
+
+    @staticmethod
+    def _notify(order):
+        """Отправляет письмо приёмщику мастерской о новой заявке (в dev — в консоль)."""
+        try:
+            subject = f'Новая заявка: {order.name}'
+            service_title = order.service.title if order.service else 'без услуги'
+            body = (
+                f'Имя: {order.name}\n'
+                f'Телефон: {order.phone}\n'
+                f'Email: {order.email or "—"}\n'
+                f'Услуга: {service_title}\n'
+                f'Задача:\n{order.message}\n'
+            )
+            send_mail(
+                subject, body,
+                settings.DEFAULT_FROM_EMAIL,
+                [settings.ORDER_NOTIFY_RECIPIENTS],
+                fail_silently=True,
+            )
+        except Exception:
+            # Письмо не должно ломать создание заявки.
+            pass
 
     @action(detail=True, methods=['post'], url_path='status')
     def update_status(self, request, pk=None):

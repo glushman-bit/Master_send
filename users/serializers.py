@@ -95,3 +95,13 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email', 'phone', 'avatar', 'bio')
+
+    def validate_email(self, value):
+        """Проверяет уникальность email при обновлении (кроме текущего пользователя)."""
+        value = value.strip().lower()
+        qs = User.objects.filter(email__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError('Пользователь с таким email уже существует.')
+        return value

@@ -71,7 +71,7 @@ $(function() {
             $('.js-auth-only').removeClass('hidden');
             $('.js-user-name').text(user.first_name || user.username);
             $('.js-user-initials').text(user.initials);
-            $('.js-user-role').text(user.role === 'master' ? 'Мастер' : 'Клиент');
+            $('.js-user-role').text(user.is_master ? (user.role === 'master' ? 'Мастер' : 'Администратор') : 'Клиент');
             if (user.avatar) {
                 $('.user-chip .user-avatar').html(`<img class="mini-avatar" src="${user.avatar}" alt="">`);
             } else {
