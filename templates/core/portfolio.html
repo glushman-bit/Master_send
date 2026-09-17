@@ -5,8 +5,8 @@
 <section class="hero hero-inner">
     <div class="container">
         <div class="hero-label">MasterBlast</div>
-        <h1>Работы</h1>
-        <p class="hero-subtitle">До и после. Качество видно глазами</p>
+        <h1>Наши работы</h1>
+        <p class="hero-subtitle">Качество видно глазами</p>
     </div>
 </section>
 
@@ -34,19 +34,14 @@
 {% block scripts %}
 <script>
 $(async function() {
-    function groupImages(p) {
-        const imgs = (p.images || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
-        return {
-            before: imgs.filter(i => i.kind === 'before'),
-            after: imgs.filter(i => i.kind === 'after')
-        };
+    function sortedImages(p) {
+        return (p.images || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
-    function photoGrid(list, caption, title) {
+    function photoGrid(list, title) {
         return `<figure class="work-photo">
-            <figcaption>${caption}</figcaption>
             <div class="work-photo-grid">
-                ${list.map(im => `<img src="${im.image}" alt="${title} — ${caption.toLowerCase()}" loading="lazy" onerror="this.classList.add('img-broken')">`).join('')}
+                ${list.map(im => `<img src="${im.image}" alt="${title}" loading="lazy" onerror="this.classList.add('img-broken')">`).join('')}
             </div>
         </figure>`;
     }
@@ -60,8 +55,8 @@ $(async function() {
             return;
         }
         list.forEach(p => {
-            const groups = groupImages(p);
-            const cover = groups.after[0] || groups.before[0];
+            const imgs = sortedImages(p);
+            const cover = imgs[0];
             const media = cover
                 ? `<img class="portfolio-image" src="${cover.image}" alt="${p.title}"
                      loading="lazy" onerror="this.classList.add('img-broken')">`
@@ -88,14 +83,10 @@ $(async function() {
 
     function openWork(p) {
         $body.empty();
-        const groups = groupImages(p);
-        let photos = '';
-        if (groups.before.length || groups.after.length) {
-            photos = '<div class="work-photos">'
-                + (groups.before.length ? photoGrid(groups.before, 'До', p.title) : '')
-                + (groups.after.length ? photoGrid(groups.after, 'После', p.title) : '')
-                + '</div>';
-        }
+        const imgs = sortedImages(p);
+        const photos = imgs.length
+            ? '<div class="work-photos">' + photoGrid(imgs, p.title) + '</div>'
+            : '';
         $body.append(`
             <h2 class="work-title">${p.title}</h2>
             <p class="work-service">${p.service_title || ''}</p>

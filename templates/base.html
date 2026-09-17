@@ -6,17 +6,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MasterBlast — Пескоструй • Порошковая покраска • Сварка{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=15">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=16">
 </head>
 <body>
     <header class="site-header" id="siteHeader">
         <div class="container header-inner">
             <a href="{% url 'core:home' %}" class="logo">Master<span>Blast</span></a>
             <nav class="main-nav">
-                <a href="{% url 'core:services' %}">Типы работ</a>
                 <a href="{% url 'core:portfolio' %}">Наши работы</a>
+                <a href="{% url 'core:services' %}">Типы работ</a>
                 <a href="{% url 'core:contacts' %}">Контакты</a>
-                <a href="{% url 'core:admin_panel' %}" class="js-admin-link hidden">Панель</a>
+                <a href="{% url 'core:admin_panel' %}" class="js-admin-link hidden">Администрирование</a>
             </nav>
             <div class="user-nav">
                 <a href="tel:+79994576932" class="header-phone">+7 999 457 69 32</a>
