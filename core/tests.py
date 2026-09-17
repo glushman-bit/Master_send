@@ -41,8 +41,8 @@ class SeedDemoCommandTestCase(TempMediaMixin, TestCase):
         self.assertGreaterEqual(Service.objects.count(), 3)
         self.assertGreaterEqual(PortfolioItem.objects.count(), 3)
         item = PortfolioItem.objects.filter(is_published=True).first()
-        self.assertTrue(item.image_before)
-        self.assertTrue(item.image_after)
+        self.assertGreaterEqual(item.images.filter(kind='before').count(), 1)
+        self.assertGreaterEqual(item.images.filter(kind='after').count(), 2)
 
     def test_seed_is_idempotent(self):
         """Повторный запуск seed_demo не дублирует данные."""

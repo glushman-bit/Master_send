@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from core.tests_utils import TempMediaMixin
-from portfolio.models import PortfolioItem
+from portfolio.models import PortfolioItem, PortfolioImage
 from services.models import Service
 
 
@@ -17,12 +17,23 @@ class PortfolioTestCase(TempMediaMixin, APITestCase):
             description='Обработка',
             price_from=1000,
         )
-        gif = SimpleUploadedFile('after.gif', b'GIF89a', content_type='image/gif')
-        PortfolioItem.objects.create(
-            service=service, title='Диски до/после', image_after=gif, is_published=True,
+        item = PortfolioItem.objects.create(
+            service=service, title='Диски до/после', is_published=True,
         )
-        PortfolioItem.objects.create(
-            service=service, title='Скрытая работа', image_after=gif, is_published=False,
+        PortfolioImage.objects.create(
+            item=item, kind='before',
+            image=SimpleUploadedFile('before.gif', b'GIF89a', content_type='image/gif'),
+        )
+        PortfolioImage.objects.create(
+            item=item, kind='after',
+            image=SimpleUploadedFile('after.gif', b'GIF89a', content_type='image/gif'),
+        )
+        hidden = PortfolioItem.objects.create(
+            service=service, title='Скрытая работа', is_published=False,
+        )
+        PortfolioImage.objects.create(
+            item=hidden, kind='after',
+            image=SimpleUploadedFile('after2.gif', b'GIF89a', content_type='image/gif'),
         )
 
     def test_lists_only_published(self):
@@ -32,3 +43,13 @@ class PortfolioTestCase(TempMediaMixin, APITestCase):
         titles = [p['title'] for p in res.data['results']]
         self.assertIn('Диски до/после', titles)
         self.assertNotIn('Скрытая работа', titles)
+
+    def test_returns_images_grouped_by_kind(self):
+        """API возвращает список фото с типом «до»/«после»."""
+        res = self.client.get('/api/portfolio/')
+        item = next(p for p in res.data['results'] if p['title'] == 'Диски до/после')
+        kinds = [im['kind'] for im in item['images']]
+        self.assertEqual(kinds.count('before'), 1)
+        self.assertEqual(kinds.count('after'), 1)
+        for im in item['images']:
+            self.assertTrue(im['image'].startswith('http'))

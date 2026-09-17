@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login, logout
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import generics, permissions, status
@@ -38,6 +38,8 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        # Создаём Django-сессию, чтобы серверные guard-страницы (админ-панель) видели пользователя.
+        login(request, user)
         tokens = get_tokens_for_user(user)
         return Response({
             'user': UserSerializer(user).data,
@@ -77,6 +79,8 @@ class LoginView(APIView):
             )
 
         tokens = get_tokens_for_user(user)
+        # Создаём Django-сессию, чтобы серверные guard-страницы (админ-панель) видели пользователя.
+        login(request, user)
         return Response({
             'user': UserSerializer(user).data,
             'tokens': tokens,
@@ -116,13 +120,14 @@ class LogoutView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
-        """Отзывает (blacklist) refresh-токен пользователя при выходе."""
+        """Отзывает (blacklist) refresh-токен пользователя при выходе и завершает сессию."""
         try:
             refresh_token = request.data.get('refresh')
             if not refresh_token:
                 return Response({'detail': 'Нет refresh токена.'}, status=status.HTTP_400_BAD_REQUEST)
             token = RefreshToken(refresh_token)
             token.blacklist()
+            logout(request)
             return Response({'detail': 'Вы вышли из системы.'})
         except Exception:
             return Response({'detail': 'Невалидный токен.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -180,6 +185,8 @@ class UserListView(APIView):
                 'initials': u.initials,
                 'date_joined': u.date_joined,
                 'is_master': u.is_master,
+                'is_active': u.is_active,
+                'is_superuser': u.is_superuser,
                 'orders': {
                     'total': u.orders_total,
                     'new': u.orders_new,
@@ -190,3 +197,42 @@ class UserListView(APIView):
             })
 
         return Response(result)
+
+
+class UserBlockView(APIView):
+    """Блокировка/разблокировка пользователя (только для мастеров)."""
+    permission_classes = (IsMaster,)
+
+    def post(self, request, pk=None):
+        """Меняет статус is_active пользователя. Суперпользователей и себя блокировать нельзя."""
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response(
+                {'detail': 'Пользователь не найден.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        is_active = bool(request.data.get('is_active', False))
+
+        if user.is_superuser:
+            return Response(
+                {'detail': 'Нельзя заблокировать администратора.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if user.pk == request.user.pk:
+            return Response(
+                {'detail': 'Нельзя изменить статус собственного аккаунта.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.is_active != is_active:
+            user.is_active = is_active
+            user.save(update_fields=['is_active'])
+
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'is_active': user.is_active,
+            'detail': 'Пользователь заблокирован.' if not is_active else 'Пользователь разблокирован.',
+        })

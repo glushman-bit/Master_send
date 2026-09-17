@@ -23,11 +23,34 @@
         <div class="work-modal-body" id="workModalBody"></div>
     </div>
 </div>
+
+<!-- Увеличенное фото (левая кнопка мыши) -->
+<div id="workZoom" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <button type="button" class="modal-close js-zoom-close" aria-label="Закрыть">&times;</button>
+    <img id="workZoomImg" class="zoom-image" alt="Увеличенное фото">
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 $(async function() {
+    function groupImages(p) {
+        const imgs = (p.images || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        return {
+            before: imgs.filter(i => i.kind === 'before'),
+            after: imgs.filter(i => i.kind === 'after')
+        };
+    }
+
+    function photoGrid(list, caption, title) {
+        return `<figure class="work-photo">
+            <figcaption>${caption}</figcaption>
+            <div class="work-photo-grid">
+                ${list.map(im => `<img src="${im.image}" alt="${title} — ${caption.toLowerCase()}" loading="lazy" onerror="this.classList.add('img-broken')">`).join('')}
+            </div>
+        </figure>`;
+    }
+
     try {
         const data = await API.get('/portfolio/');
         const list = data.results || data;
@@ -37,11 +60,16 @@ $(async function() {
             return;
         }
         list.forEach(p => {
+            const groups = groupImages(p);
+            const cover = groups.after[0] || groups.before[0];
+            const media = cover
+                ? `<img class="portfolio-image" src="${cover.image}" alt="${p.title}"
+                     loading="lazy" onerror="this.classList.add('img-broken')">`
+                : '<div class="portfolio-cover-empty">Без фото</div>';
             $grid.append(`
                 <div class="portfolio-card js-work-open" data-id="${p.id}"
                      role="button" tabindex="0" aria-label="Открыть работу: ${p.title}">
-                    <img class="portfolio-image" src="${p.image_after}" alt="${p.title}"
-                         loading="lazy" onerror="this.parentElement.classList.add('image-error')">
+                    ${media}
                     <div class="portfolio-body">
                         <h3>${p.title}</h3>
                         <p>${p.description || ''}</p>
@@ -60,23 +88,18 @@ $(async function() {
 
     function openWork(p) {
         $body.empty();
+        const groups = groupImages(p);
+        let photos = '';
+        if (groups.before.length || groups.after.length) {
+            photos = '<div class="work-photos">'
+                + (groups.before.length ? photoGrid(groups.before, 'До', p.title) : '')
+                + (groups.after.length ? photoGrid(groups.after, 'После', p.title) : '')
+                + '</div>';
+        }
         $body.append(`
             <h2 class="work-title">${p.title}</h2>
             <p class="work-service">${p.service_title || ''}</p>
-            <div class="work-photos">
-                <figure class="work-photo">
-                    <figcaption>До</figcaption>
-                    ${p.image_before
-                        ? `<img src="${p.image_before}" alt="${p.title} — до"
-                             onerror="this.parentElement.classList.add('image-error')">`
-                        : '<div class="image-error">Фото «до» отсутствует</div>'}
-                </figure>
-                <figure class="work-photo">
-                    <figcaption>После</figcaption>
-                    <img src="${p.image_after}" alt="${p.title} — после"
-                         onerror="this.parentElement.classList.add('image-error')">
-                </figure>
-            </div>
+            ${photos}
             ${p.description ? `<p class="work-desc">${p.description}</p>` : ''}
         `);
         $modal.removeClass('hidden');
@@ -103,6 +126,33 @@ $(async function() {
     $(document).on('click', '.js-work-close', closeWork);
     $(document).on('mousedown', '#workModal', function(e) {
         if (e.target === this) closeWork();
+    });
+
+    // ===== Увеличение фото по левой кнопке мыши =====
+    const $zoom = $('#workZoom');
+
+    function openZoom(url) {
+        if (!url) return;
+        $('#workZoomImg').attr('src', url);
+        $zoom.removeClass('hidden');
+        $('body').addClass('modal-open');
+    }
+
+    function closeZoom() {
+        $zoom.addClass('hidden');
+        if ($modal.hasClass('hidden')) $('body').removeClass('modal-open');
+    }
+
+    $(document).on('click', '.work-photo-grid img', function() {
+        openZoom($(this).attr('src'));
+    });
+
+    $(document).on('click', '.js-zoom-close', closeZoom);
+    $(document).on('click', '#workZoom', function(e) {
+        if (e.target === this) closeZoom();
+    });
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && !$zoom.hasClass('hidden')) closeZoom();
     });
 });
 </script>

@@ -1,11 +1,18 @@
 from rest_framework import serializers
-from .models import PortfolioItem
+from .models import PortfolioItem, PortfolioImage
+
+
+class PortfolioImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PortfolioImage
+        fields = ('id', 'kind', 'image', 'order')
 
 
 class PortfolioItemSerializer(serializers.ModelSerializer):
     service_title = serializers.CharField(source='service.title', read_only=True)
+    images = PortfolioImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = PortfolioItem
         fields = ('id', 'service', 'service_title', 'title', 'description',
-                  'image_before', 'image_after', 'created_at')
+                  'images', 'is_published', 'created_at')

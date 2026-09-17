@@ -27,7 +27,7 @@ def cabinet_view(request):
 
 
 def admin_panel_view(request):
-    """Панель администратора — только для мастеров/администраторов."""
-    if not (request.user.is_authenticated and request.user.is_master):
+    """Панель администратора — только для активных мастеров/администраторов."""
+    if not (request.user.is_authenticated and request.user.is_active and request.user.is_master):
         return redirect('core:home')
     return render(request, 'core/admin_panel.html')

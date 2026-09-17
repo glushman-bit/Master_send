@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions
 from .models import Service
 from .serializers import ServiceSerializer
+from core.permissions import IsMaster
 
 
 class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
@@ -16,3 +17,13 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
         if category:
             qs = qs.filter(category=category)
         return qs
+
+
+class ServiceAdminViewSet(viewsets.ModelViewSet):
+    """
+    Управление услугами (только для мастеров/администраторов):
+    создание, просмотр всех (в т.ч. неактивных), изменение, удаление.
+    """
+    queryset = Service.objects.all()
+    serializer_class = ServiceSerializer
+    permission_classes = (IsMaster,)

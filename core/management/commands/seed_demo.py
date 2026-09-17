@@ -7,7 +7,7 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from PIL import Image, ImageDraw
 
-from portfolio.models import PortfolioItem
+from portfolio.models import PortfolioItem, PortfolioImage
 from services.models import Service
 
 W, H = 800, 500
@@ -245,22 +245,28 @@ class Command(BaseCommand):
             help='Удалить существующие услуги и работы перед заполнением.',
         )
 
-    def _set_image(self, item, field, label, bg_top, bg_bottom, disc_color, dirty):
-        """Генерирует и сохраняет изображение на объект работы, заменяя старое."""
-        old = getattr(item, field)
-        new = make_image(label, bg_top, bg_bottom, image_slug(item.title), disc_color, dirty=dirty)
-        if old:
-            old.delete(save=False)
-        setattr(item, field, new)
+    def _reset_images(self, item):
+        """Удаляет все фото работы с диска и из БД."""
+        for img in item.images.all():
+            if img.image and img.image.name:
+                img.image.storage.delete(img.image.name)
+            img.delete()
+
+    def _add_image(self, item, kind, label, bg_top, bg_bottom, disc_color, dirty, slug):
+        """Создаёт одно синтетическое фото работы."""
+        order = item.images.filter(kind=kind).count()
+        PortfolioImage.objects.create(
+            item=item,
+            kind=kind,
+            image=make_image(label, bg_top, bg_bottom, slug, disc_color, dirty=dirty),
+            order=order,
+        )
 
     def handle(self, *args, **options):
         """Заполняет базу тестовыми услугами и работами портфолио."""
         if options['flush']:
             for item in PortfolioItem.objects.all():
-                for f in ('image_before', 'image_after'):
-                    img = getattr(item, f)
-                    if img:
-                        img.delete(save=False)
+                self._reset_images(item)
             PortfolioItem.objects.all().delete()
             Service.objects.all().delete()
             self.stdout.write(self.style.WARNING('Существующие данные удалены.'))
@@ -290,9 +296,14 @@ class Command(BaseCommand):
             obj.service = services_by_category[category]
             obj.description = f'Пример работы: {tags}.'
             obj.is_published = True
-            self._set_image(obj, 'image_before', 'ДО', '#9aa0a8', '#4c525a', '#6a6d72', dirty=True)
-            self._set_image(obj, 'image_after', 'ПОСЛЕ', bg_top, bg_bottom, disc_color, dirty=False)
             obj.save()
+            self._reset_images(obj)
+            before_slug = image_slug(obj.title) + '_before'
+            self._add_image(obj, PortfolioImage.Kind.BEFORE, 'ДО', '#9aa0a8', '#4c525a', '#6a6d72', dirty=True, slug=before_slug)
+            after_slug = image_slug(obj.title)
+            self._add_image(obj, PortfolioImage.Kind.AFTER, 'ПОСЛЕ', bg_top, bg_bottom, disc_color, dirty=False, slug=after_slug)
+            variant = '#%02x%02x%02x' % _shade(hex_rgb(disc_color), 1.18)
+            self._add_image(obj, PortfolioImage.Kind.AFTER, 'ПОСЛЕ 2', bg_top, bg_bottom, variant, dirty=False, slug=after_slug + '_v2')
 
         services_count = Service.objects.count()
         portfolio_count = PortfolioItem.objects.count()

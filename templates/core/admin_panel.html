@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
-{% block title %}Панель администратора — Мастерская{% endblock %}
+{% load static %}
+{% block title %}Панель администратора — MasterBlast{% endblock %}
 
 {% block content %}
 <section class="container section">
     <div class="admin-panel-head">
         <div>
             <h2 class="admin-panel-title">Панель администратора</h2>
-            <p class="muted">Заявки и пользователи, обновление в реальном времени</p>
+            <p class="muted">Заявки, пользователи, работы портфолио и услуги — управление сайтом</p>
         </div>
         <div class="admin-live" id="adminLive" title="Обновление онлайн">
             <span class="live-dot"></span>
@@ -83,228 +84,210 @@
                 </div>
             </div>
 
-            <!-- Клиенты -->
-            <div class="admin-users-group">
-                <h3>Клиенты</h3>
-                <div class="table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Пользователь</th>
-                                <th>Email</th>
-                                <th>Заказы</th>
-                                <th class="t-new">Новые</th>
-                                <th class="t-progress">В работе</th>
-                                <th class="t-done">Выполнено</th>
-                                <th class="t-cancelled">Отменено</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminClientsList">
-                            <tr><td colspan="7" class="muted">Загрузка...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Пользователь</th>
+                            <th>Email / Телефон</th>
+                            <th>Фио</th>
+                            <th>Роль</th>
+                            <th>Заказы</th>
+                            <th>Регистрация</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUsersList">
+                        <tr><td colspan="8" class="muted">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== Работы портфолио ===== -->
+        <div class="card admin-zone">
+            <div class="admin-zone-title">
+                <h2>Работы портфолио</h2>
             </div>
 
-            <!-- Мастера -->
-            <div class="admin-users-group">
-                <h3>Мастера</h3>
-                <div class="table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Пользователь</th>
-                                <th>Email</th>
-                                <th>Заказы</th>
-                                <th class="t-new">Новые</th>
-                                <th class="t-progress">В работе</th>
-                                <th class="t-done">Выполнено</th>
-                                <th class="t-cancelled">Отменено</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminMastersList">
-                            <tr><td colspan="7" class="muted">Загрузка...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="admin-toolbar">
+                <h3>Все работы</h3>
+                <button type="button" class="btn btn-primary btn-sm js-work-add">Добавить работу</button>
+            </div>
+
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Фото</th>
+                            <th>Название</th>
+                            <th>Услуга</th>
+                            <th>До / После</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminWorksList">
+                        <tr><td colspan="6" class="muted">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== Услуги ===== -->
+        <div class="card admin-zone">
+            <div class="admin-zone-title">
+                <h2>Услуги</h2>
+            </div>
+
+            <div class="admin-toolbar">
+                <h3>Все услуги</h3>
+                <button type="button" class="btn btn-primary btn-sm js-service-add">Добавить услугу</button>
+            </div>
+
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Категория</th>
+                            <th>Название</th>
+                            <th>Описание</th>
+                            <th>Цена</th>
+                            <th>Иконка</th>
+                            <th>Порядок</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminServicesList">
+                        <tr><td colspan="8" class="muted">Загрузка...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </section>
+
+<!-- ===== Модальное окно: Работа ===== -->
+<div id="workModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="workModalTitle">
+    <div class="modal admin-modal">
+        <button type="button" class="modal-close js-work-modal-close" aria-label="Закрыть">&times;</button>
+        <div class="auth-header">
+            <h2 id="workModalTitle">Новая работа</h2>
+            <p class="muted">Добавьте фото «до» и «после» выполненной работы</p>
+        </div>
+        <form id="workForm" enctype="multipart/form-data" novalidate>
+            <input type="hidden" name="id">
+            <div class="form-group">
+                <label for="workTitle">Название *</label>
+                <input class="form-input" id="workTitle" name="title" required maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="workService">Услуга *</label>
+                <select class="form-input" id="workService" name="service" required></select>
+            </div>
+            <div class="form-group">
+                <label for="workDescription">Описание</label>
+                <textarea class="form-input" id="workDescription" name="description"></textarea>
+            </div>
+            <div class="two-cols">
+                <div class="form-group">
+                    <label>Фото «до» (можно несколько)</label>
+                    <div class="work-img-list" id="workImgBeforeList"></div>
+                    <input class="form-input file-input" type="file" id="workImgBefore"
+                           name="images_before" accept="image/*" multiple>
+                </div>
+                <div class="form-group">
+                    <label>Фото «после» (можно несколько)</label>
+                    <div class="work-img-list" id="workImgAfterList"></div>
+                    <input class="form-input file-input" type="file" id="workImgAfter"
+                           name="images_after" accept="image/*" multiple>
+                </div>
+            </div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="workPublished" name="is_published" checked>
+                <label for="workPublished">Опубликована на сайте</label>
+            </div>
+            <div class="form-error hidden js-work-error"></div>
+            <button type="submit" class="btn btn-primary btn-block">Сохранить работу</button>
+        </form>
+    </div>
+</div>
+
+<!-- ===== Модальное окно: Услуга ===== -->
+<div id="serviceModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="serviceModalTitle">
+    <div class="modal admin-modal">
+        <button type="button" class="modal-close js-service-modal-close" aria-label="Закрыть">&times;</button>
+        <div class="auth-header">
+            <h2 id="serviceModalTitle">Новая услуга</h2>
+            <p class="muted">Настройка услуги, цены и отображения на сайте</p>
+        </div>
+        <form id="serviceForm" novalidate>
+            <input type="hidden" name="id">
+            <div class="two-cols">
+                <div class="form-group">
+                    <label for="serviceCategory">Категория *</label>
+                    <select class="form-input" id="serviceCategory" name="category" required>
+                        <option value="sand">Пескоструй</option>
+                        <option value="powder">Порошковая покраска</option>
+                        <option value="weld">Сварка</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="serviceIcon">Иконка (эмодзи)</label>
+                    <input class="form-input" id="serviceIcon" name="icon" maxlength="10" placeholder="⚙">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="serviceTitle">Название *</label>
+                <input class="form-input" id="serviceTitle" name="title" required maxlength="150">
+            </div>
+            <div class="form-group">
+                <label for="serviceDescription">Описание *</label>
+                <textarea class="form-input" id="serviceDescription" name="description" required></textarea>
+            </div>
+            <div class="two-cols">
+                <div class="form-group">
+                    <label for="servicePrice">Цена от, ₽ *</label>
+                    <input class="form-input" id="servicePrice" name="price_from" type="number" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="serviceUnit">Единица измерения</label>
+                    <input class="form-input" id="serviceUnit" name="price_unit" maxlength="50" placeholder="за м²">
+                </div>
+            </div>
+            <div class="two-cols">
+                <div class="form-group">
+                    <label for="serviceOrder">Порядок сортировки</label>
+                    <input class="form-input" id="serviceOrder" name="order" type="number" value="0">
+                </div>
+                <div class="checkbox-row" style="align-self:end;">
+                    <input type="checkbox" id="serviceActive" name="is_active" checked>
+                    <label for="serviceActive">Активна</label>
+                </div>
+            </div>
+            <div class="form-error hidden js-service-error"></div>
+            <button type="submit" class="btn btn-primary btn-block">Сохранить услугу</button>
+        </form>
+    </div>
+</div>
+
+<!-- ===== Модальное окно: подтверждение действия ===== -->
+<div id="confirmModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+    <div class="modal admin-modal confirm-modal">
+        <div class="auth-header">
+            <h2 id="confirmModalTitle">Подтвердите действие</h2>
+            <div id="confirmModalBody" class="confirm-body"></div>
+        </div>
+        <div class="btn-row">
+            <button type="button" class="btn btn-ghost js-confirm-cancel">Отмена</button>
+            <button type="button" class="btn btn-danger js-confirm-ok" id="confirmModalOk">Подтвердить</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-$(function() {
-    const POLL_INTERVAL = 20000;
-    let prevNew = null;
-    let timer = null;
-
-    function isAdmin() {
-        return !!(API.user && API.user.is_master);
-    }
-
-    if (!isAdmin()) {
-        window.location.href = '/';
-        return;
-    }
-
-    refreshAll();
-    timer = setInterval(refreshAll, POLL_INTERVAL);
-
-    async function refreshAll() {
-        const filter = $('#adminStatusFilter').val() || 'new';
-        await Promise.all([refreshStats(), refreshUserStats(), refreshOrders(filter), refreshUsers()]);
-    }
-
-    async function refreshStats() {
-        try {
-            const s = await API.get('/orders/stats/');
-            $('.js-stat-new').text(s.new);
-            $('.js-stat-progress').text(s.in_progress);
-            $('.js-stat-done').text(s.done);
-            $('.js-stat-total').text(s.total);
-            updateBadge(s.new);
-            pulseIfNew(s.new);
-        } catch (e) {}
-    }
-
-    async function refreshUserStats() {
-        try {
-            const s = await API.get('/auth/stats/');
-            $('.js-users-total').text(s.total);
-            $('.js-users-clients').text(s.clients);
-            $('.js-users-masters').text(s.masters);
-            $('.js-users-new-month').text(s.new_month);
-            $('.js-users-active-week').text(s.active_week);
-        } catch (e) {}
-    }
-
-    function updateBadge(count) {
-        const $badge = $('#newOrdersBadge');
-        if (count > 0) {
-            $badge.text(count).removeClass('hidden');
-        } else {
-            $badge.addClass('hidden');
-        }
-    }
-
-    function pulseIfNew(count) {
-        if (prevNew === null) { prevNew = count; return; }
-        if (count > prevNew) {
-            $('#newOrdersBadge').addClass('pulse');
-            showToast('Поступила новая заявка (' + count + ' новых)!', 'success');
-            setTimeout(() => $('#newOrdersBadge').removeClass('pulse'), 2000);
-        }
-        prevNew = count;
-    }
-
-    function renderUserAvatar(u) {
-        if (u.avatar) return '<img class="user-table-avatar" src="' + u.avatar + '" alt="">';
-        return '<span class="user-table-avatar avatar-fallback">' + u.initials + '</span>';
-    }
-
-    function renderUserRow(u) {
-        var o = u.orders;
-        return '<tr>' +
-            '<td><div class="user-cell">' + renderUserAvatar(u) +
-                '<div class="user-cell-info">' +
-                    '<strong>' + (u.first_name || u.username) + '</strong>' +
-                    '<div class="muted">' + (u.email || '—') + '</div>' +
-                '</div>' +
-            '</div></td>' +
-            '<td>' + (u.email || '—') + '</td>' +
-            '<td class="t-total"><strong>' + o.total + '</strong></td>' +
-            '<td class="t-new">' + o.new + '</td>' +
-            '<td class="t-progress">' + o.progress + '</td>' +
-            '<td class="t-done">' + o.done + '</td>' +
-            '<td class="t-cancelled">' + o.cancelled + '</td>' +
-        '</tr>';
-    }
-
-    async function refreshUsers() {
-        try {
-            const users = await API.get('/auth/users/');
-            if (!users || !users.length) {
-                $('#adminClientsList').html('<tr><td colspan="7" class="muted">Клиентов нет.</td></tr>');
-                $('#adminMastersList').html('<tr><td colspan="7" class="muted">Мастеров нет.</td></tr>');
-                return;
-            }
-            const clients = users.filter(function(u) { return !u.is_master; });
-            const masters = users.filter(function(u) { return u.is_master; });
-
-            $('#adminClientsList').html(
-                clients.length ? clients.map(renderUserRow).join('')
-                               : '<tr><td colspan="7" class="muted">Клиентов нет.</td></tr>'
-            );
-            $('#adminMastersList').html(
-                masters.length ? masters.map(renderUserRow).join('')
-                               : '<tr><td colspan="7" class="muted">Мастеров нет.</td></tr>'
-            );
-        } catch (e) {
-            $('#adminClientsList').html('<tr><td colspan="7" class="muted">Не удалось загрузить.</td></tr>');
-            $('#adminMastersList').html('<tr><td colspan="7" class="muted">Не удалось загрузить.</td></tr>');
-        }
-    }
-
-    async function refreshOrders(status) {
-        const url = status === 'all' ? '/orders/?page_size=1000' : '/orders/?status=' + status + '&page_size=1000';
-        const $list = $('#adminOrdersList');
-        try {
-            const data = await API.get(url);
-            const orders = data.results || data;
-            if (!orders.length) {
-                $list.html('<p class="muted">Заявок нет.</p>');
-                return;
-            }
-            $list.html(orders.map(function(o) {
-                var actions = '';
-                if (o.status === 'new') {
-                    actions =
-                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="progress">Взять в работу</button>' +
-                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="done">Выполнено</button>' +
-                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="cancelled">Отменить</button>';
-                } else if (o.status === 'progress') {
-                    actions =
-                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="done">Выполнено</button>' +
-                        '<button class="btn btn-sm btn-ghost js-set-status" data-id="' + o.id + '" data-status="cancelled">Отменить</button>';
-                } else {
-                    actions = '<span class="muted">Заявка закрыта</span>';
-                }
-                return '<div class="order-item admin-order-item">' +
-                    '<div class="admin-order-main">' +
-                        '<strong>' + o.name + '</strong>' +
-                        '<span class="status status-' + o.status + '">' + o.status_display + '</span>' +
-                        '<span class="admin-order-created muted">📅 ' + new Date(o.created_at).toLocaleString('ru-RU') + '</span>' +
-                    '</div>' +
-                    (o.user_name ? '<div class="muted">👤 ' + o.user_name + '</div>' : '') +
-                    '<div class="muted">' + o.message + '</div>' +
-                    '<div class="admin-order-actions">' + actions + '</div>' +
-                '</div>';
-            }).join(''));
-        } catch (e) {
-            $list.html('<p class="muted">Не удалось загрузить заявки.</p>');
-        }
-    }
-
-    $(document).on('click', '.js-set-status', async function() {
-        var $btn = $(this);
-        var id = $btn.data('id');
-        var status = $btn.data('status');
-        $btn.prop('disabled', true);
-        try {
-            await API.post('/orders/' + id + '/status/', {status: status});
-            showToast('Статус заявки обновлён');
-            refreshAll();
-        } catch (err) {
-            showToast(err.message || 'Не удалось обновить статус', 'error');
-            $btn.prop('disabled', false);
-        }
-    });
-
-    $('#adminStatusFilter').on('change', function() {
-        refreshOrders(this.value);
-    });
-});
-</script>
+<script src="{% static 'js/admin-panel.js' %}?v=7"></script>
 {% endblock %}
