@@ -6,17 +6,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MasterBlast — Пескоструй • Порошковая покраска • Сварка{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=17">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=27">
 </head>
 <body>
     <header class="site-header" id="siteHeader">
         <div class="container header-inner">
             <a href="{% url 'core:home' %}" class="logo">Master<span>Blast</span></a>
             <nav class="main-nav">
-                <a href="{% url 'core:portfolio' %}">Наши работы</a>
-                <a href="{% url 'core:services' %}">Типы работ</a>
-                <a href="{% url 'core:about' %}">О нас</a>
-                <a href="{% url 'core:contacts' %}">Контакты</a>
+                <a href="{% url 'core:home' %}#works">Наши работы</a>
+                <a href="{% url 'core:home' %}#services">Типы работ</a>
+                <a href="{% url 'core:home' %}#prices">Цены</a>
+                <a href="{% url 'core:home' %}#about">О нас</a>
+                <a href="{% url 'core:home' %}#contacts">Контакты</a>
                 <a href="{% url 'core:admin_panel' %}" class="js-admin-link hidden">Администрирование</a>
             </nav>
             <div class="user-nav">
@@ -53,10 +54,10 @@
         <div class="container footer-inner">
             <div>© 2026 MasterBlast. Все права защищены.</div>
             <div class="footer-links">
-                <a href="{% url 'core:services' %}">Услуги</a>
-                <a href="{% url 'core:portfolio' %}">Работы</a>
-                <a href="{% url 'core:about' %}">О нас</a>
-                <a href="{% url 'core:contacts' %}">Контакты</a>
+                <a href="{% url 'core:home' %}#services">Услуги</a>
+                <a href="{% url 'core:home' %}#works">Работы</a>
+                <a href="{% url 'core:home' %}#about">О нас</a>
+                <a href="{% url 'core:home' %}#contacts">Контакты</a>
             </div>
         </div>
     </footer>
