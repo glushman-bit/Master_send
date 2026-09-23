@@ -1011,6 +1011,29 @@ $(function() {
         );
     });
 
+    /* ===== Поля описаний: панель «Абзац» ===== */
+    $('.js-paragraph-field').each(function() {
+        const $ta = $(this);
+        const $wrap = $('<div class="desc-toolbar" role="toolbar" aria-label="Форматирование текста"></div>');
+        $('<span class="desc-toolbar-hint">Пустая строка — новый абзац</span>').appendTo($wrap);
+        $('<button type="button" class="btn btn-sm desc-paragraph-btn">Абзац</button>')
+            .attr('data-target', this.id)
+            .appendTo($wrap);
+        $wrap.insertBefore($ta);
+    });
+
+    $(document).on('click', '.desc-paragraph-btn', function() {
+        const $ta = $('#' + $(this).data('target'));
+        if (!$ta.length) return;
+        const el = $ta[0];
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        el.value = el.value.slice(0, start) + '\n\n' + el.value.slice(end);
+        const pos = start + 2;
+        el.setSelectionRange(pos, pos);
+        $ta.trigger('focus');
+    });
+
     /* ===== Закрытие модалок по оверлею и Escape ===== */
     $(document).on('mousedown', '#workModal, #serviceModal, #priceModal, #confirmModal', function(e) {
         if (e.target === this) {

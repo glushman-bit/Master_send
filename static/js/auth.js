@@ -202,3 +202,18 @@ function showToast(msg, type = 'success') {
     $('body').append($t);
     setTimeout(() => $t.fadeOut(300, () => $t.remove()), 3000);
 }
+
+function nlToP(text, cls) {
+    if (!text) return '';
+    const safe = String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    const clsAttr = cls ? ' class="' + cls + '"' : '';
+    return safe
+        .split(/\n\s*\n/)
+        .filter(p => p.trim().length > 0)
+        .map(p => '<p' + clsAttr + '>' + p.trim().split(/\n/).join('<br>') + '</p>')
+        .join('');
+}
