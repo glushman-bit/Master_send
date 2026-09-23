@@ -2,21 +2,20 @@
 {% block title %}MasterBlast — Пескоструй • Порошковая покраска • Сварка{% endblock %}
 
 {% block content %}
-<section class="hero">
+<!-- ===== 1. Главная ===== -->
+<section class="hero" id="top">
     <div class="container">
         <div class="hero-label">Мастерская металлообработки</div>
         <h1 class="hero-title">Пескоструй<br><span>Покраска</span><br>Сварка</h1>
-        <h6
-            class="hero-subtitle">Полный цикл обработки металлических изделий — от очистки до финишного покрытия. Работаем с любыми объёмами.
-        </h6>
+        <h6 class="hero-subtitle">Полный цикл обработки металлических изделий — от очистки до финишного покрытия. Работаем с любыми объёмами.</h6>
         <div class="hero-values">
             <span>Точность</span>
             <span>Ответственность</span>
             <span>Безопасность</span>
         </div>
         <div class="hero-actions">
-            <a href="{% url 'core:contacts' %}" class="btn btn-primary js-add-order-only">Оставить заявку</a>
-            <a href="{% url 'core:portfolio' %}" class="btn btn-ghost">Наши работы</a>
+            <a href="#order" class="btn btn-primary js-add-order-only">Записаться на консультацию</a>
+<!--            <a href="#works" class="btn btn-ghost">Наши работы</a>-->
         </div>
     </div>
     <div class="container">
@@ -37,40 +36,405 @@
     </div>
 </section>
 
-<section class="container section">
-    <h2 class="section-title">Наши услуги</h2>
-    <div id="servicesGrid" class="services-grid">
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
+<!-- ===== 2. Наши работы ===== -->
+<section class="container section" id="works">
+    <h2 class="section-title">Наши работы</h2>
+    {% include 'core/_portfolio_section.html' %}
+</section>
+
+<!-- ===== 3. Типы работ ===== -->
+<section class="container section" id="services">
+    <h2 class="section-title">Типы работ</h2>
+    <div id="servicesList" class="services-list">
+        <div class="service-row skeleton-row"></div>
+        <div class="service-row skeleton-row"></div>
+        <div class="service-row skeleton-row"></div>
     </div>
 </section>
+
+<!-- ===== 4. Цены ===== -->
+<section class="container section" id="prices">
+    <h2 class="section-title">Цены</h2>
+    <div id="pricesTables">
+        <p class="muted">Загрузка...</p>
+    </div>
+</section>
+
+<!-- ===== 5. О нас ===== -->
+<section class="container section" id="about">
+    <h2 class="section-title">О нас</h2>
+    <div id="aboutContent" class="about-page">
+        <p class="muted">Загрузка...</p>
+    </div>
+</section>
+
+<!-- ===== 6. Контакты ===== -->
+<section class="container section" id="contacts">
+    <h2 class="section-title">Контакты</h2>
+    <div class="contact-layout">
+        <div class="contact-info">
+            <div class="card">
+                <h3>Наши контакты</h3>
+                <p class="muted">📞 Телефон: <a href="tel:+79994576932">+7 (999) 457-69-32</a></p>
+                <p class="muted">✉️ Email: <a href="mailto:info@master-send.ru">info@master-send.ru</a></p>
+                <p class="muted">📍 Адрес: г. Москва, ул. Мастеровая, д. 1</p>
+                <p class="muted">🕘 Режим работы: Пн–Сб, с 10:00 до 19:00</p>
+            </div>
+        </div>
+        <div class="card order-form-card">
+            <h2>Мы на связи</h2>
+            <p class="muted">Позвоните нам или оставьте заявку в форме ниже — ответим в течение рабочего дня</p>
+            <div class="hero-actions">
+                <a href="tel:+79994576932" class="btn btn-primary">Позвонить</a>
+                <a href="#order" class="btn btn-ghost js-add-order-only">Записаться на консультацию</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== 7. Записаться на консультацию ===== -->
+<section class="container section" id="order">
+    <h2 class="section-title">Записаться на консультацию</h2>
+    <div class="contact-layout">
+        <div class="card order-form-card js-add-order-only">
+            <h2>Заявка на консультацию</h2>
+            <p class="muted">Расскажите о задаче — пришлём предварительный расчёт и сроки</p>
+
+            <form id="orderForm">
+                <div class="form-group">
+                    <label for="orderName">Ваше имя</label>
+                    <input class="form-input" id="orderName" name="name" required maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label for="orderPhone">Телефон</label>
+                    <input class="form-input" id="orderPhone" name="phone" type="tel" required maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label for="orderEmail">Email (необязательно)</label>
+                    <input class="form-input" id="orderEmail" name="email" type="email" maxlength="254">
+                </div>
+                <div class="form-group">
+                    <label for="orderService">Услуга</label>
+                    <select class="form-input contact-select" id="orderService" name="service">
+                        <option value="">— Выберите услугу —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="orderMessage">Описание задачи</label>
+                    <textarea class="form-input" id="orderMessage" name="message" required></textarea>
+                </div>
+                <div class="form-error hidden js-error"></div>
+                <button type="submit" class="btn btn-primary btn-block">Записаться на консультацию</button>
+            </form>
+        </div>
+
+        <div class="card order-form-card js-order-blocked hidden">
+            <h2>Заявка на консультацию</h2>
+            <p class="muted">Расскажите о задаче — пришлём предварительный расчёт и сроки</p>
+            <div class="order-blocked-note">
+                <p>Для записи на консультацию необходимо <strong>авторизоваться</strong>.</p>
+                <div class="hero-actions">
+                    <a href="#" class="btn btn-primary js-open-login">Войти</a>
+                    <a href="#" class="btn btn-ghost js-open-register">Регистрация</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Световое окно просмотра работы -->
+<div id="workModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal work-modal">
+        <button type="button" class="modal-close js-work-close" aria-label="Закрыть">&times;</button>
+        <div class="work-modal-body" id="workModalBody"></div>
+    </div>
+</div>
+
+<!-- Увеличенное фото работы (левая кнопка мыши) -->
+<div id="workZoom" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <button type="button" class="modal-close js-zoom-close" aria-label="Закрыть">&times;</button>
+    <img id="workZoomImg" class="zoom-image" alt="Увеличенное фото">
+</div>
+
+<!-- Увеличенное фото «О нас» (левая кнопка мыши) -->
+<div id="aboutZoom" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <button type="button" class="modal-close js-about-zoom-close" aria-label="Закрыть">&times;</button>
+    <img id="aboutZoomImg" class="zoom-image" alt="Увеличенное фото">
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 $(async function() {
+    /* ===== Наши работы ===== */
+    function sortedImages(p) {
+        return (p.images || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+
+    function photoGrid(list, title) {
+        return `<figure class="work-photo">
+            <div class="work-photo-grid">
+                ${list.map(im => `<img src="${im.image}" alt="${title}" loading="lazy" onerror="this.classList.add('img-broken')">`).join('')}
+            </div>
+        </figure>`;
+    }
+
+    try {
+        const data = await API.get('/portfolio/');
+        const list = data.results || data;
+        const $grid = $('#portfolioGrid').empty();
+        if (list.length) {
+            list.forEach(p => {
+                const imgs = sortedImages(p);
+                const cover = imgs[0];
+                const media = cover
+                    ? `<img class="portfolio-image" src="${cover.image}" alt="${p.title}"
+                         loading="lazy" onerror="this.classList.add('img-broken')">`
+                    : '<div class="portfolio-cover-empty">Без фото</div>';
+                $grid.append(`
+                    <div class="portfolio-card js-work-open" data-id="${p.id}"
+                         role="button" tabindex="0" aria-label="Открыть работу: ${p.title}">
+                        ${media}
+                        <div class="portfolio-body">
+                            <h3>${p.title}</h3>
+                        </div>
+                    </div>
+                `);
+            });
+        } else {
+            $grid.html('<p class="muted">Работы скоро появятся.</p>');
+        }
+    } catch (e) {
+        $('#portfolioGrid').html('<p class="muted">Не удалось загрузить работы.</p>');
+    }
+
+    const $modal = $('#workModal');
+    const $body = $('#workModalBody');
+
+    function openWork(p) {
+        $body.empty();
+        const imgs = sortedImages(p);
+        const photos = imgs.length
+            ? '<div class="work-photos">' + photoGrid(imgs, p.title) + '</div>'
+            : '';
+        $body.append(`
+            <h2 class="work-title">${p.title}</h2>
+            <p class="work-service">${p.service_title || ''}</p>
+            ${photos}
+            ${p.description ? `<p class="work-desc">${p.description}</p>` : ''}
+        `);
+        $modal.removeClass('hidden');
+        $('body').addClass('modal-open');
+    }
+
+    function closeWork() {
+        $modal.addClass('hidden');
+        $('body').removeClass('modal-open');
+    }
+
+    $(document).on('click', '.js-work-open', async function() {
+        const id = $(this).data('id');
+        try {
+            const item = await API.get('/portfolio/' + id + '/');
+            openWork(item);
+        } catch (e) {
+            showToast('Не удалось открыть работу.', 'error');
+        }
+    });
+    $(document).on('click', '.js-work-close', closeWork);
+    $(document).on('mousedown', '#workModal', function(e) {
+        if (e.target === this) closeWork();
+    });
+
+    // ===== Увеличение фото работы =====
+    const $zoom = $('#workZoom');
+    function openZoom(url) {
+        if (!url) return;
+        $('#workZoomImg').attr('src', url);
+        $zoom.removeClass('hidden');
+        $('body').addClass('modal-open');
+    }
+    function closeZoom() {
+        $zoom.addClass('hidden');
+        if ($modal.hasClass('hidden')) $('body').removeClass('modal-open');
+    }
+    $(document).on('click', '.work-photo-grid img', function() { openZoom($(this).attr('src')); });
+    $(document).on('click', '.js-zoom-close', closeZoom);
+    $(document).on('click', '#workZoom', function(e) { if (e.target === this) closeZoom(); });
+
+    /* ===== Стрелки прокрутки ===== */
+    const $pGrid = $('#portfolioGrid');
+    $('.js-portfolio-prev, .js-portfolio-next').on('click', function() {
+        const dir = $(this).hasClass('js-portfolio-prev') ? -1 : 1;
+        const step = Math.min($pGrid.outerWidth(), 1000) * 0.85;
+        $pGrid[0].scrollBy({ left: dir * step, behavior: 'smooth' });
+    });
+
+    /* ===== Типы работ ===== */
     try {
         const data = await API.get('/services/');
         const list = data.results || data;
-        const $grid = $('#servicesGrid').empty();
-        if (!list.length) {
-            $grid.html('<p class="muted">Услуги скоро появятся.</p>');
+        const $list = $('#servicesList').empty();
+        if (list.length) {
+            list.forEach((s, i) => {
+                $list.append(`
+                    <div class="service-row">
+                        <div class="service-num">${String(i + 1).padStart(2, '0')}</div>
+                        <div class="service-body">
+                            <div class="service-name">${s.title}</div>
+                            <div class="service-desc">${s.description}</div>
+                        </div>
+                        <div class="service-price">от <strong>${s.price_from} ₽</strong> ${s.price_unit}</div>
+                    </div>
+                `);
+            });
+        } else {
+            $list.html('<p class="muted">Услуги скоро появятся.</p>');
+        }
+    } catch (e) {
+        $('#servicesList').html('<p class="muted">Не удалось загрузить услуги.</p>');
+    }
+
+    /* ===== Цены ===== */
+    function renderPriceTables(tables) {
+        const $p = $('#pricesTables').empty();
+        if (!tables || !tables.length) {
+            $p.html('<p class="muted">Цены скоро появятся.</p>');
             return;
         }
-        list.forEach(s => {
-            $grid.append(`
-                <div class="service-card">
-                    <div class="service-icon">${s.icon || '⚙'}</div>
-                    <h3>${s.title}</h3>
-                    <p>${s.description}</p>
-                    <div class="service-price">от <strong>${s.price_from} ₽</strong> ${s.price_unit}</div>
-                </div>
-            `);
+        tables.forEach(function(t) {
+            const rows = (t.cells || []).filter(function(r) { return r.length > 0; });
+            if (!rows.length) return;
+            const head = rows[0];
+            const body = rows.slice(1);
+            let html = '<div class="price-block">';
+            html += '<h3 class="price-title">' + esc(t.title) + '</h3>';
+            if (t.description && t.description.trim()) {
+                html += '<p class="price-desc">' + esc(t.description) + '</p>';
+            }
+            html += '<div class="table-wrap"><table class="price-table">';
+            html += '<thead><tr>' + head.map(function(h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead>';
+            if (body.length) {
+                html += '<tbody>' + body.map(function(r) {
+                    return '<tr>' + r.map(function(c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>';
+                }).join('') + '</tbody>';
+            }
+            html += '</table></div></div>';
+            $p.append(html);
         });
-    } catch (e) {
-        $('#servicesGrid').html('<p class="muted">Не удалось загрузить услуги.</p>');
     }
+
+    try {
+        const data = await API.get('/prices/');
+        renderPriceTables(data.results || data);
+    } catch (e) {
+        $('#pricesTables').html('<p class="muted">Не удалось загрузить цены.</p>');
+    }
+
+    /* ===== О нас ===== */
+    function esc(s) {
+        if (s === null || s === undefined) return '';
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    try {
+        const data = await API.get('/about/');
+        const $about = $('#aboutContent').empty();
+        const aimgs = (data.images || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        const imgsHtml = aimgs.length
+            ? '<div class="about-images">' +
+              aimgs.map(function(im) {
+                  const z = Math.min(Math.max(parseInt(im.scale, 10) || 100, 20), 300) / 100;
+                  const x = ['left', 'center', 'right'].indexOf(im.pos_x) >= 0 ? im.pos_x : 'center';
+                  const y = ['top', 'center', 'bottom'].indexOf(im.pos_y) >= 0 ? im.pos_y : 'center';
+return '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loading="lazy"' +
+                    ' style="transform:scale(' + z + ');transform-origin:' + x + ' ' + y + '"' +
+                    ' onerror="this.classList.add(\'img-broken\')">';
+              }).join('') +
+              '</div>'
+            : '';
+        const descHtml = (data.description && data.description.trim())
+            ? '<div class="about-desc card">' + esc(data.description).replace(/\n/g, '<br>') + '</div>'
+            : '';
+        if (imgsHtml && descHtml) {
+            $about.append('<div class="about-layout">' + imgsHtml + descHtml + '</div>');
+        } else if (imgsHtml) {
+            $about.append(imgsHtml);
+        } else if (descHtml) {
+            $about.append(descHtml);
+        } else {
+            $about.html('<p class="muted">Раздел наполняется. Загляните позже.</p>');
+        }
+    } catch (e) {
+        $('#aboutContent').html('<p class="muted">Не удалось загрузить информацию.</p>');
+    }
+
+    const $azoom = $('#aboutZoom');
+    function openAboutZoom(url) {
+        if (!url) return;
+        $('#aboutZoomImg').attr('src', url);
+        $azoom.removeClass('hidden');
+        $('body').addClass('modal-open');
+    }
+    function closeAboutZoom() {
+        $azoom.addClass('hidden');
+        if ($modal.hasClass('hidden') && $zoom.hasClass('hidden')) $('body').removeClass('modal-open');
+    }
+    $(document).on('click', '.about-image', function() { openAboutZoom($(this).attr('src')); });
+    $(document).on('click', '.js-about-zoom-close', closeAboutZoom);
+    $(document).on('click', '#aboutZoom', function(e) { if (e.target === this) closeAboutZoom(); });
+
+    /* ===== Записаться на консультацию ===== */
+    try {
+        const data = await API.get('/services/');
+        const list = data.results || data;
+        list.forEach(s => {
+            $('#orderService').append(`<option value="${s.id}">${s.title}</option>`);
+        });
+    } catch (e) {}
+
+    $('#orderForm').on('submit', async function(e) {
+        e.preventDefault();
+        const $form = $(this);
+        const $btn = $form.find('button[type=submit]');
+        const $err = $form.find('.js-error');
+        $err.text('').addClass('hidden');
+        $btn.prop('disabled', true).text('Отправка...');
+
+        const data = Object.fromEntries(new FormData(this));
+        if (!data.service) data.service = null;
+
+        try {
+            await API.post('/orders/', data);
+            showToast('Заявка отправлена! Мы свяжемся с вами.');
+            $form.trigger('reset');
+        } catch (err) {
+            let msg = err.message || 'Не удалось отправить заявку';
+            if (err.data) {
+                for (const key in err.data) {
+                    const val = err.data[key];
+                    if (Array.isArray(val)) { msg = val[0]; break; }
+                    if (typeof val === 'string') { msg = val; break; }
+                }
+            }
+            $err.text(msg).removeClass('hidden');
+        } finally {
+            $btn.prop('disabled', false).text('Записаться на консультацию');
+        }
+    });
+
+    /* ===== Общее закрытие по Escape ===== */
+    $(document).on('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+        if (!$modal.hasClass('hidden')) closeWork();
+        if (!$zoom.hasClass('hidden')) closeZoom();
+        if (!$azoom.hasClass('hidden')) closeAboutZoom();
+    });
 });
 </script>
 {% endblock %}
