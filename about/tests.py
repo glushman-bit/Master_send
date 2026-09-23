@@ -101,3 +101,68 @@ class AboutAdminTestCase(TempMediaMixin, APITestCase):
         page.refresh_from_db()
         self.assertFalse(page.images.filter(id=old.id).exists())
         self.assertEqual(page.images.count(), 1)
+
+    def test_master_can_set_image_size_and_position(self):
+        """Мастер может изменить размер и центрование фото."""
+        page = AboutPage.objects.create(description='Текст')
+        img = AboutImage.objects.create(page=page, image=make_image('photo.png'), order=0)
+        self.client.force_authenticate(self.master)
+        res = self.client.put('/api/admin/about/', {
+            'description': 'Текст',
+            'images_meta': json.dumps([{
+                'id': img.id,
+                'scale': 150,
+                'pos_x': 'left',
+                'pos_y': 'bottom',
+            }]),
+        }, format='multipart')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        img.refresh_from_db()
+        self.assertEqual(img.scale, 150)
+        self.assertEqual(img.pos_x, 'left')
+        self.assertEqual(img.pos_y, 'bottom')
+        self.assertEqual(res.data['images'][0]['scale'], 150)
+        self.assertEqual(res.data['images'][0]['pos_x'], 'left')
+        self.assertEqual(res.data['images'][0]['pos_y'], 'bottom')
+
+    def test_master_can_set_size_and_position_for_new_images(self):
+        """Размер и центрование применяются и к новым фотографиям."""
+        self.client.force_authenticate(self.master)
+        res = self.client.put('/api/admin/about/', {
+            'description': 'Текст',
+            'images': [make_image('one.png'), make_image('two.png')],
+            'images_new_meta': json.dumps([
+                {'scale': 250, 'pos_x': 'right', 'pos_y': 'top'},
+                {'scale': 80, 'pos_x': 'left', 'pos_y': 'bottom'},
+            ]),
+        }, format='multipart')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        first, second = AboutImage.objects.order_by('order', 'id')
+        self.assertEqual(first.scale, 250)
+        self.assertEqual(first.pos_x, 'right')
+        self.assertEqual(first.pos_y, 'top')
+        self.assertEqual(second.scale, 80)
+        self.assertEqual(second.pos_x, 'left')
+        self.assertEqual(second.pos_y, 'bottom')
+
+    def test_images_meta_ignores_invalid_values(self):
+        """Некорректные значения размера/центрования не применяются."""
+        page = AboutPage.objects.create(description='Текст')
+        img = AboutImage.objects.create(
+            page=page, image=make_image('photo.png'), order=0,
+            scale=100, pos_x='center', pos_y='center',
+        )
+        self.client.force_authenticate(self.master)
+        self.client.put('/api/admin/about/', {
+            'description': 'Текст',
+            'images_meta': json.dumps([{
+                'id': img.id,
+                'scale': 99999,
+                'pos_x': 'diagonal',
+                'pos_y': 42,
+            }]),
+        }, format='multipart')
+        img.refresh_from_db()
+        self.assertEqual(img.scale, 100)
+        self.assertEqual(img.pos_x, 'center')
+        self.assertEqual(img.pos_y, 'center')
