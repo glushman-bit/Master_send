@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand
 from PIL import Image, ImageDraw
 
 from portfolio.models import PortfolioItem, PortfolioImage
+from prices.models import PriceTable
 from services.models import Service
 
 W, H = 800, 500
@@ -238,6 +239,42 @@ class Command(BaseCommand):
         ('Бампер внедорожника — чёрный мат', Service.Category.POWDER, 'порошковая покраска RAL 9005', '#8b929b', '#3d4248', '#292c30'),
     ]
 
+    PRICE_TABLES = [
+        {
+            'title': 'Стоимость покраски дисков, руб',
+            'description': 'Предлагаем покраску дисков порошковой краской, цена на которую включает: '
+                           'пескоструйную обработку, порошковую грунтовку и порошковую покраску всей поверхности диска.',
+            'order': 1,
+            'cells': [
+                [
+                    'диаметр диска',
+                    'легкосплавные литые и кованные диски без гальв. покрытия',
+                    'легкосплавные литые и кованные диски с гальв. покрытием',
+                    'стальные диски',
+                ],
+                ['До D 10', '5000,00', '6000,00', '2000,00'],
+                ['D 10 – D 12', '6000,00', '7000,00', '2500,00'],
+                ['D 13 – D 15', '7000,00', '8000,00', '3000,00'],
+                ['D 16 – D 18', '8000,00', '9000,00', '3500,00'],
+                ['D 19 – D 21', '9500,00', '10500,00', '4000,00'],
+                ['D 22 и более', '11000,00', '12000,00', '4500,00'],
+            ],
+        },
+        {
+            'title': 'Дополнительные услуги',
+            'description': 'Работы, которые могут потребоваться при покраске дисков.',
+            'order': 2,
+            'cells': [
+                ['Наименование', 'Ед. измерения', 'Стоимость, руб'],
+                ['Пескоструйная обработка диска', 'шт', '1000,00'],
+                ['Демонтаж и монтаж шин (без снятия)', 'шт', '500,00'],
+                ['Снятие и установка диска с автомобиля', 'шт', '300,00'],
+                ['Услуга разбортировки / забортировки', 'шт', '200,00'],
+                ['Упаковка дисков', 'шт', '100,00'],
+            ],
+        },
+    ]
+
     def add_arguments(self, parser):
         """Добавляет аргумент командной строки --flush."""
         parser.add_argument(
@@ -269,6 +306,7 @@ class Command(BaseCommand):
                 self._reset_images(item)
             PortfolioItem.objects.all().delete()
             Service.objects.all().delete()
+            PriceTable.objects.all().delete()
             self.stdout.write(self.style.WARNING('Существующие данные удалены.'))
 
         for s in self.SERVICES:
@@ -305,8 +343,20 @@ class Command(BaseCommand):
             variant = '#%02x%02x%02x' % _shade(hex_rgb(disc_color), 1.18)
             self._add_image(obj, PortfolioImage.Kind.AFTER, 'ПОСЛЕ 2', bg_top, bg_bottom, variant, dirty=False, slug=after_slug + '_v2')
 
+        for table in self.PRICE_TABLES:
+            PriceTable.objects.update_or_create(
+                title=table['title'],
+                defaults={
+                    'description': table['description'],
+                    'cells': table['cells'],
+                    'order': table['order'],
+                    'is_published': True,
+                },
+            )
+
         services_count = Service.objects.count()
         portfolio_count = PortfolioItem.objects.count()
+        prices_count = PriceTable.objects.count()
         self.stdout.write(self.style.SUCCESS(
-            f'Готово: услуг {services_count}, работ в портфолио {portfolio_count}.'
+            f'Готово: услуг {services_count}, работ в портфолио {portfolio_count}, таблиц цен {prices_count}.'
         ))
