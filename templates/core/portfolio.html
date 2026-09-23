@@ -11,9 +11,7 @@
 </section>
 
 <section class="container section">
-    <div id="portfolioGrid" class="portfolio-grid">
-        <p class="muted">Загрузка...</p>
-    </div>
+    {% include 'core/_portfolio_section.html' %}
 </section>
 
 <!-- Световое окно просмотра работы -->
@@ -139,6 +137,14 @@ $(async function() {
     $(document).on('click', '.js-zoom-close', closeZoom);
     $(document).on('click', '#workZoom', function(e) {
         if (e.target === this) closeZoom();
+    });
+
+    // ===== Стрелки прокрутки =====
+    const $pGrid = $('#portfolioGrid');
+    $('.js-portfolio-prev, .js-portfolio-next').on('click', function() {
+        const dir = $(this).hasClass('js-portfolio-prev') ? -1 : 1;
+        const step = Math.min($pGrid.outerWidth(), 1000) * 0.85;
+        $pGrid[0].scrollBy({ left: dir * step, behavior: 'smooth' });
     });
     $(document).on('keydown', function(e) {
         if (e.key === 'Escape' && !$zoom.hasClass('hidden')) closeZoom();
