@@ -5,6 +5,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from portfolio.views import PortfolioAdminViewSet
+from prices.views import AdminPriceViewSet
 from services.views import ServiceAdminViewSet
 from about.views import AdminAboutView
 
@@ -12,6 +13,7 @@ from about.views import AdminAboutView
 admin_router = DefaultRouter()
 admin_router.register('portfolio', PortfolioAdminViewSet, basename='admin-portfolio')
 admin_router.register('services', ServiceAdminViewSet, basename='admin-services')
+admin_router.register('prices', AdminPriceViewSet, basename='admin-prices')
 
 
 urlpatterns = [
@@ -24,6 +26,7 @@ urlpatterns = [
     path('api/orders/', include('orders.urls')),
     path('api/about/', include('about.urls')),
     path('api/admin/about/', AdminAboutView.as_view(), name='admin-about'),
+    path('api/prices/', include('prices.urls')),
     path('api/admin/', include(admin_router.urls)),
 
     # Страницы
