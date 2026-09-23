@@ -5,7 +5,7 @@ from .models import AboutPage, AboutImage
 class AboutImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = AboutImage
-        fields = ('id', 'image', 'order')
+        fields = ('id', 'image', 'order', 'scale', 'pos_x', 'pos_y')
 
 
 class AboutPageSerializer(serializers.ModelSerializer):
