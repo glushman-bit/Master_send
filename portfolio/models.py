@@ -12,7 +12,7 @@ class PortfolioItem(models.Model):
     class Meta:
         verbose_name = 'Работа'
         verbose_name_plural = 'Работы'
-        ordering = ('-created_at',)
+        ordering = ('created_at',)
 
     def __str__(self):
         """Возвращает название работы."""
