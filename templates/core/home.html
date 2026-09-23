@@ -221,7 +221,7 @@ $(async function() {
             <h2 class="work-title">${p.title}</h2>
             <p class="work-service">${p.service_title || ''}</p>
             ${photos}
-            ${p.description ? `<p class="work-desc">${p.description}</p>` : ''}
+            ${p.description ? nlToP(p.description, 'work-desc') : ''}
         `);
         $modal.removeClass('hidden');
         $('body').addClass('modal-open');
@@ -282,7 +282,7 @@ $(async function() {
                         <div class="service-num">${String(i + 1).padStart(2, '0')}</div>
                         <div class="service-body">
                             <div class="service-name">${s.title}</div>
-                            <div class="service-desc">${s.description}</div>
+                            <div class="service-desc">${nlToP(s.description)}</div>
                         </div>
                         <div class="service-price">от <strong>${s.price_from} ₽</strong> ${s.price_unit}</div>
                     </div>
@@ -310,7 +310,7 @@ $(async function() {
             let html = '<div class="price-block">';
             html += '<h3 class="price-title">' + esc(t.title) + '</h3>';
             if (t.description && t.description.trim()) {
-                html += '<p class="price-desc">' + esc(t.description) + '</p>';
+                html += nlToP(t.description, 'price-desc');
             }
             html += '<div class="table-wrap"><table class="price-table">';
             html += '<thead><tr>' + head.map(function(h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead>';
@@ -359,7 +359,7 @@ return '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loa
               '</div>'
             : '';
         const descHtml = (data.description && data.description.trim())
-            ? '<div class="about-desc card">' + esc(data.description).replace(/\n/g, '<br>') + '</div>'
+            ? '<div class="about-desc card">' + nlToP(data.description) + '</div>'
             : '';
         if (imgsHtml && descHtml) {
             $about.append('<div class="about-layout">' + imgsHtml + descHtml + '</div>');

@@ -36,7 +36,7 @@ $(async function() {
                     <div class="service-num">${String(i + 1).padStart(2, '0')}</div>
                     <div class="service-body">
                         <div class="service-name">${s.title}</div>
-                        <div class="service-desc">${s.description}</div>
+                        <div class="service-desc">${nlToP(s.description)}</div>
                     </div>
                     <div class="service-price">от <strong>${s.price_from} ₽</strong> ${s.price_unit}</div>
                 </div>

@@ -87,7 +87,7 @@ $(async function() {
             <h2 class="work-title">${p.title}</h2>
             <p class="work-service">${p.service_title || ''}</p>
             ${photos}
-            ${p.description ? `<p class="work-desc">${p.description}</p>` : ''}
+            ${p.description ? nlToP(p.description, 'work-desc') : ''}
         `);
         $modal.removeClass('hidden');
         $('body').addClass('modal-open');

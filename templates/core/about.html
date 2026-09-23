@@ -54,7 +54,7 @@ return '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loa
               '</div>'
             : '';
         const descHtml = (data.description && data.description.trim())
-            ? '<div class="about-desc card">' + esc(data.description).replace(/\n/g, '<br>') + '</div>'
+            ? '<div class="about-desc card">' + nlToP(data.description) + '</div>'
             : '';
 
         if (imgsHtml && descHtml) {
