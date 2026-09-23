@@ -20,9 +20,23 @@ class AboutPage(models.Model):
 
 class AboutImage(models.Model):
     """Фотография для страницы «О нас»."""
+
+    class PositionX(models.TextChoices):
+        LEFT = 'left', 'Слева'
+        CENTER = 'center', 'По центру'
+        RIGHT = 'right', 'Справа'
+
+    class PositionY(models.TextChoices):
+        TOP = 'top', 'Сверху'
+        CENTER = 'center', 'По центру'
+        BOTTOM = 'bottom', 'Снизу'
+
     page = models.ForeignKey(AboutPage, on_delete=models.CASCADE, related_name='images', verbose_name='Страница')
     image = models.ImageField(upload_to='about/%Y/%m/', verbose_name='Фото')
     order = models.PositiveIntegerField(default=0, verbose_name='Порядок')
+    scale = models.PositiveIntegerField(default=100, verbose_name='Размер, %')
+    pos_x = models.CharField(max_length=10, choices=PositionX.choices, default=PositionX.CENTER, verbose_name='Центрование по горизонтали')
+    pos_y = models.CharField(max_length=10, choices=PositionY.choices, default=PositionY.CENTER, verbose_name='Центрование по вертикали')
 
     class Meta:
         verbose_name = 'Фото страницы «О нас»'
