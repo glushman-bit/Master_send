@@ -41,18 +41,29 @@ $(async function() {
         const $box = $('#aboutContent').empty();
         const imgs = (data.images || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
 
-        if (data.description && data.description.trim()) {
-            $box.append('<div class="about-desc card">' + esc(data.description).replace(/\n/g, '<br>') + '</div>');
-        }
-        if (imgs.length) {
-            const grid = '<div class="about-images">' +
-                imgs.map(im =>
-                    '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loading="lazy" onerror="this.classList.add(\'img-broken\')">'
-                ).join('') +
-                '</div>';
-            $box.append(grid);
-        }
-        if (!$box.children().length) {
+        const imgsHtml = imgs.length
+            ? '<div class="about-images">' +
+              imgs.map(function(im) {
+                  const z = Math.min(Math.max(parseInt(im.scale, 10) || 100, 20), 300) / 100;
+                  const x = ['left', 'center', 'right'].indexOf(im.pos_x) >= 0 ? im.pos_x : 'center';
+                  const y = ['top', 'center', 'bottom'].indexOf(im.pos_y) >= 0 ? im.pos_y : 'center';
+return '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loading="lazy"' +
+                    ' style="transform:scale(' + z + ');transform-origin:' + x + ' ' + y + '"' +
+                    ' onerror="this.classList.add(\'img-broken\')">';
+              }).join('') +
+              '</div>'
+            : '';
+        const descHtml = (data.description && data.description.trim())
+            ? '<div class="about-desc card">' + esc(data.description).replace(/\n/g, '<br>') + '</div>'
+            : '';
+
+        if (imgsHtml && descHtml) {
+            $box.append('<div class="about-layout">' + imgsHtml + descHtml + '</div>');
+        } else if (imgsHtml) {
+            $box.append(imgsHtml);
+        } else if (descHtml) {
+            $box.append(descHtml);
+        } else {
             $box.html('<p class="muted">Раздел наполняется. Загляните позже.</p>');
         }
     } catch (e) {

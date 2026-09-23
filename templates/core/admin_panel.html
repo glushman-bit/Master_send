@@ -167,6 +167,35 @@
             </div>
         </div>
 
+        <!-- ===== Цены ===== -->
+        <div class="card admin-zone">
+            <div class="admin-zone-title">
+                <h2>Цены</h2>
+            </div>
+
+            <div class="admin-toolbar">
+                <h3>Таблицы цен</h3>
+                <button type="button" class="btn btn-primary btn-sm js-price-add">Добавить таблицу</button>
+            </div>
+
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Строк</th>
+                            <th>Порядок</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminPricesList">
+                        <tr><td colspan="5" class="muted">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- ===== О нас ===== -->
         <div class="card admin-zone">
             <div class="admin-zone-title">
@@ -174,26 +203,30 @@
             </div>
             <p class="muted">Текст и фотографии страницы «О нас» на сайте</p>
 
-            <div class="form-group" style="margin-top:14px;">
-                <label for="aboutDescription">Описание</label>
-                <textarea class="form-input" id="aboutDescription" rows="8"
-                          placeholder="Расскажите о компании, мастерах и оборудовании"></textarea>
-            </div>
+            <div class="form-group about-layout" style="margin-top:14px; gap: 24px;">
+                <div class="form-group">
+                    <label>Фотографии (можно несколько)</label>
+                    <div class="work-img-list" id="aboutImgList"></div>
+                    <input class="form-input file-input" type="file" id="aboutImgInput"
+                           name="images" accept="image/*" multiple>
+                </div>
 
-            <div class="form-group">
-                <label>Фотографии (можно несколько)</label>
-                <div class="work-img-list" id="aboutImgList"></div>
-                <input class="form-input file-input" type="file" id="aboutImgInput"
-                       name="images" accept="image/*" multiple>
-            </div>
+                <div>
+                    <div class="form-group" style="margin-top:0;">
+                        <label for="aboutDescription">Описание</label>
+                        <textarea class="form-input" id="aboutDescription" rows="8"
+                                  placeholder="Расскажите о компании, мастерах и оборудовании"></textarea>
+                    </div>
 
-            <div class="checkbox-row">
-                <input type="checkbox" id="aboutPublished" checked>
-                <label for="aboutPublished">Опубликована на сайте</label>
-            </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="aboutPublished" checked>
+                        <label for="aboutPublished">Опубликована на сайте</label>
+                    </div>
 
-            <div class="form-error hidden js-about-error"></div>
-            <button type="button" class="btn btn-primary js-about-save">Сохранить «О нас»</button>
+                    <div class="form-error hidden js-about-error"></div>
+                    <button type="button" class="btn btn-primary js-about-save">Сохранить «О нас»</button>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -302,6 +335,50 @@
     </div>
 </div>
 
+<!-- ===== Модальное окно: Таблица цен ===== -->
+<div id="priceModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="priceModalTitle">
+    <div class="modal admin-modal price-modal">
+        <button type="button" class="modal-close js-price-modal-close" aria-label="Закрыть">&times;</button>
+        <div class="auth-header">
+            <h2 id="priceModalTitle">Новая таблица цен</h2>
+            <p class="muted">Название и описание таблицы + редактируемая сетка</p>
+        </div>
+        <form id="priceForm" novalidate>
+            <input type="hidden" name="id">
+            <div class="form-group">
+                <label for="priceTitle">Название *</label>
+                <input class="form-input" id="priceTitle" name="title" required maxlength="255">
+            </div>
+            <div class="form-group">
+                <label for="priceDescription">Описание</label>
+                <textarea class="form-input" id="priceDescription" name="description" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Таблица (первая строка — заголовок)</label>
+                <div class="price-editor-wrap">
+                    <table class="price-editor" id="priceGridEditor"></table>
+                </div>
+                <div class="price-editor-actions">
+                    <button type="button" class="btn btn-ghost btn-sm js-price-add-row">+ Строка</button>
+                    <button type="button" class="btn btn-ghost btn-sm js-price-add-col">+ Столбец</button>
+                </div>
+            </div>
+            <div class="two-cols">
+                <div class="form-group">
+                    <label for="priceOrder">Порядок сортировки</label>
+                    <input class="form-input" id="priceOrder" name="order" type="number" value="0">
+                </div>
+                <div class="checkbox-row" style="align-self:end;">
+                    <input type="checkbox" id="pricePublished" name="is_published" checked>
+                    <label for="pricePublished">Опубликована на сайте</label>
+                </div>
+            </div>
+            <div class="form-error hidden js-price-error"></div>
+            <button type="submit" class="btn btn-primary btn-block">Сохранить таблицу</button>
+        </form>
+    </div>
+</div>
+
 <!-- ===== Модальное окно: подтверждение действия ===== -->
 <div id="confirmModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
     <div class="modal admin-modal confirm-modal">
@@ -318,5 +395,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/admin-panel.js' %}?v=8"></script>
+<script src="{% static 'js/admin-panel.js' %}?v=11"></script>
 {% endblock %}
