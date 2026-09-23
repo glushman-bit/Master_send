@@ -56,6 +56,7 @@ $(function() {
             refreshWorks(),
             refreshServices(),
             refreshAbout(),
+            refreshPriceTables(),
         ]);
     }
 
@@ -399,6 +400,7 @@ $(function() {
 
     $(document).on('click', '.work-img-remove', function() {
         const kind = $(this).data('kind');
+        if (kind === 'about') return;
         const oldId = $(this).data('old-id');
         if (oldId !== undefined) {
             workState.removed.push(oldId);
@@ -629,20 +631,60 @@ $(function() {
     });
 
     /* ============ О нас ============ */
-    var aboutState = { id: null, images: [], removed: [], newFiles: [] };
+    var aboutState = { id: null, images: [], removed: [], newFiles: [], meta: {}, fileSeq: 0 };
+
+    function aboutImgControls(key, m) {
+        const meta = m || { scale: 100, pos_x: 'center', pos_y: 'center' };
+        const xOpts = [
+            ['left', 'Слева'],
+            ['center', 'По центру'],
+            ['right', 'Справа'],
+        ];
+        const yOpts = [
+            ['top', 'Сверху'],
+            ['center', 'По центру'],
+            ['bottom', 'Снизу'],
+        ];
+        const xHtml = xOpts.map(function(o) {
+            return '<option value="' + o[0] + '"' + (o[0] === meta.pos_x ? ' selected' : '') + '>' + o[1] + '</option>';
+        }).join('');
+        const yHtml = yOpts.map(function(o) {
+            return '<option value="' + o[0] + '"' + (o[0] === meta.pos_y ? ' selected' : '') + '>' + o[1] + '</option>';
+        }).join('');
+        return '<div class="about-img-controls">' +
+            '<label class="about-img-size">Размер <input type="number" class="form-input about-scale" ' +
+                'min="20" max="300" step="5" value="' + esc(meta.scale) + '" data-key="' + key + '">%</label>' +
+            '<select class="form-input about-posx" data-key="' + key + '" title="Центрование по горизонтали">' + xHtml + '</select>' +
+            '<select class="form-input about-posy" data-key="' + key + '" title="Центрование по вертикали">' + yHtml + '</select>' +
+            '</div>';
+    }
 
     function renderAboutImages() {
         const items = [];
         aboutState.images.forEach(function(im) {
             if (aboutState.removed.indexOf(im.id) !== -1) return;
-            items.push('<div class="work-img-item">' +
+            const key = 'id-' + im.id;
+            if (!aboutState.meta[key]) {
+                aboutState.meta[key] = { scale: im.scale || 100, pos_x: im.pos_x || 'center', pos_y: im.pos_y || 'center' };
+            }
+            items.push('<div class="work-img-item about-img-item">' +
                 '<img src="' + esc(im.image) + '" alt="">' +
-                '<button type="button" class="work-img-remove" data-kind="about" data-old-id="' + im.id + '" aria-label="Удалить фото">&times;</button></div>');
+                '<button type="button" class="work-img-remove" data-kind="about" data-old-id="' + im.id + '" ' +
+                    'data-key="' + key + '" aria-label="Удалить фото">&times;</button>' +
+                aboutImgControls(key, aboutState.meta[key]) +
+                '</div>');
         });
         aboutState.newFiles.forEach(function(f, idx) {
-            items.push('<div class="work-img-item work-img-new">' +
+            const key = f.__key || ('n' + idx);
+            if (!aboutState.meta[key]) {
+                aboutState.meta[key] = { scale: 100, pos_x: 'center', pos_y: 'center' };
+            }
+            items.push('<div class="work-img-item work-img-new about-img-item">' +
                 '<img src="' + URL.createObjectURL(f) + '" alt="">' +
-                '<button type="button" class="work-img-remove" data-kind="about" data-new-idx="' + idx + '" aria-label="Удалить фото">&times;</button></div>');
+                '<button type="button" class="work-img-remove" data-kind="about" data-key="' + key + '" ' +
+                    'data-new-idx="' + idx + '" aria-label="Удалить фото">&times;</button>' +
+                aboutImgControls(key, aboutState.meta[key]) +
+                '</div>');
         });
         $('#aboutImgList').html(items.join(''));
     }
@@ -650,7 +692,7 @@ $(function() {
     async function refreshAbout() {
         try {
             const data = await API.get('/admin/about/');
-            aboutState = { id: data.id, images: data.images || [], removed: [], newFiles: [] };
+            aboutState = { id: data.id, images: data.images || [], removed: [], newFiles: [], meta: {}, fileSeq: 0 };
             $('#aboutDescription').val(data.description || '');
             $('#aboutPublished').prop('checked', !!data.is_published);
             renderAboutImages();
@@ -661,6 +703,10 @@ $(function() {
 
     $('#aboutImgInput').on('change', function() {
         const files = Array.prototype.slice.call(this.files || []);
+        files.forEach(function(f) {
+            f.__key = 'n' + (++aboutState.fileSeq);
+            aboutState.meta[f.__key] = { scale: 100, pos_x: 'center', pos_y: 'center' };
+        });
         if (files.length) {
             aboutState.newFiles.push.apply(aboutState.newFiles, files);
         }
@@ -668,17 +714,28 @@ $(function() {
         renderAboutImages();
     });
 
-    $(document).on('click', '.work-img-remove', function() {
-        const kind = $(this).data('kind');
-        const oldId = $(this).data('old-id');
-        if (kind === 'about') {
-            if (oldId !== undefined) {
-                aboutState.removed.push(oldId);
-            } else {
-                aboutState.newFiles.splice($(this).data('new-idx'), 1);
-            }
-            renderAboutImages();
+    $(document).on('click', '.work-img-remove[data-kind="about"]', function() {
+        const $btn = $(this);
+        const oldId = $btn.data('old-id');
+        if (oldId !== undefined) {
+            if (aboutState.removed.indexOf(oldId) === -1) aboutState.removed.push(oldId);
+            delete aboutState.meta['id-' + oldId];
+        } else {
+            const key = $btn.data('key');
+            const idx = aboutState.newFiles.findIndex(function(f) { return f.__key === key; });
+            if (idx !== -1) aboutState.newFiles.splice(idx, 1);
+            delete aboutState.meta[key];
         }
+        renderAboutImages();
+    });
+
+    $(document).on('input change', '.about-scale, .about-posx, .about-posy', function() {
+        const key = $(this).data('key');
+        if (!key) return;
+        const meta = aboutState.meta[key] || (aboutState.meta[key] = { scale: 100, pos_x: 'center', pos_y: 'center' });
+        if ($(this).hasClass('about-scale')) meta.scale = parseInt(this.value, 10) || 100;
+        if ($(this).hasClass('about-posx')) meta.pos_x = this.value;
+        if ($(this).hasClass('about-posy')) meta.pos_y = this.value;
     });
 
     $(document).on('click', '.js-about-save', async function() {
@@ -694,6 +751,31 @@ $(function() {
         });
         if (aboutState.removed.length) {
             data.append('remove_images', JSON.stringify(aboutState.removed));
+        }
+        const savedMeta = aboutState.images
+            .filter(function(im) { return aboutState.removed.indexOf(im.id) === -1; })
+            .map(function(im) {
+                const m = aboutState.meta['id-' + im.id] || {};
+                return {
+                    id: im.id,
+                    scale: parseInt(m.scale, 10) || 100,
+                    pos_x: m.pos_x || im.pos_x || 'center',
+                    pos_y: m.pos_y || im.pos_y || 'center',
+                };
+            });
+        if (savedMeta.length) {
+            data.append('images_meta', JSON.stringify(savedMeta));
+        }
+        const newMeta = aboutState.newFiles.map(function(f) {
+            const m = aboutState.meta[f.__key] || {};
+            return {
+                scale: parseInt(m.scale, 10) || 100,
+                pos_x: m.pos_x || 'center',
+                pos_y: m.pos_y || 'center',
+            };
+        });
+        if (newMeta.length) {
+            data.append('images_new_meta', JSON.stringify(newMeta));
         }
 
         $btn.prop('disabled', true).text('Сохранение...');
@@ -718,11 +800,223 @@ $(function() {
         }
     });
 
+    /* ============ Цены (таблицы) ============ */
+    var priceState = { id: null, cells: [] };
+
+    function priceCellsFromDom() {
+        const rows = [];
+        $('#priceGridEditor tr').each(function() {
+            const row = [];
+            $(this).find('input.price-cell-input').each(function() {
+                row.push(this.value);
+            });
+            rows.push(row);
+        });
+        return rows;
+    }
+
+    function renderPriceEditor() {
+        const cells = priceState.cells;
+        const $t = $('#priceGridEditor').empty();
+        cells.forEach(function(row, ri) {
+            const $tr = $('<tr>');
+            row.forEach(function(val, ci) {
+                const $wrap = $('<div>').addClass('price-cell-wrap');
+                $wrap.append($('<input>')
+                    .addClass('price-cell-input')
+                    .attr({ 'data-r': ri, 'data-c': ci })
+                    .prop('value', val));
+                if (ri === 0) {
+                    $wrap.append($('<button>')
+                        .attr({ type: 'button', 'data-col': ci, title: 'Удалить столбец' })
+                        .addClass('price-col-del')
+                        .text('✕'));
+                }
+                $tr.append($('<td>').append($wrap));
+            });
+            $tr.append($('<td>').append(
+                $('<button>')
+                    .attr({ type: 'button', 'data-row': ri, title: 'Удалить строку' })
+                    .addClass('price-row-del')
+                    .text('✕')
+            ));
+            $t.append($tr);
+        });
+    }
+
+    async function refreshPriceTables() {
+        try {
+            const data = await API.get('/admin/prices/');
+            const list = data.results || data;
+            const $list = $('#adminPricesList');
+            if (!list.length) {
+                $list.html('<tr><td colspan="5" class="muted">Таблиц цен нет. Добавьте первую.</td></tr>');
+                return;
+            }
+            $list.html(list.map(function(t) {
+                const rowsCount = (t.cells || []).filter(function(r) { return r.length > 0; }).length;
+                const status = t.is_published
+                    ? '<span class="status-active">Опубликована</span>'
+                    : '<span class="status-blocked">Скрыта</span>';
+                return '<tr>' +
+                    '<td>' + esc(t.title) + '</td>' +
+                    '<td>' + rowsCount + '</td>' +
+                    '<td>' + esc(t.order) + '</td>' +
+                    '<td>' + status + '</td>' +
+                    '<td class="cell-fit">' +
+                        '<button class="btn btn-sm btn-ghost js-price-edit" data-id="' + t.id + '">Изменить</button> ' +
+                        '<button class="btn btn-sm btn-ghost js-price-delete" data-id="' + t.id + '">Удалить</button>' +
+                    '</td>' +
+                '</tr>';
+            }).join(''));
+        } catch (e) {
+            $('#adminPricesList').html('<tr><td colspan="5" class="muted">Не удалось загрузить таблицы цен.</td></tr>');
+        }
+    }
+
+    function openPriceModal(table) {
+        priceState = {
+            id: table ? table.id : null,
+            cells: (table && table.cells && table.cells.length) ? table.cells : [['', '', '']],
+        };
+        $('#priceModalTitle').text(table ? 'Редактировать таблицу цен' : 'Новая таблица цен');
+        $('#priceForm [name="id"]').val(table ? table.id : '');
+        $('#priceTitle').val(table ? (table.title || '') : '');
+        $('#priceDescription').val(table ? (table.description || '') : '');
+        $('#priceOrder').val(table ? (table.order || 0) : 0);
+        $('#pricePublished').prop('checked', table ? !!table.is_published : true);
+        renderPriceEditor();
+        $('#priceModal').removeClass('hidden');
+        $('body').addClass('modal-open');
+    }
+
+    function closePriceModal() {
+        $('#priceModal').addClass('hidden');
+        if ($('#workModal').hasClass('hidden') && $('#serviceModal').hasClass('hidden')) {
+            $('body').removeClass('modal-open');
+        }
+    }
+
+    $(document).on('click', '.js-price-add', function() {
+        openPriceModal(null);
+    });
+    $(document).on('click', '.js-price-edit', async function() {
+        const id = $(this).data('id');
+        try {
+            const t = await API.get('/admin/prices/' + id + '/');
+            openPriceModal(t);
+        } catch (e) {
+            showToast('Не удалось загрузить таблицу.', 'error');
+        }
+    });
+    $(document).on('click', '.js-price-modal-close', closePriceModal);
+
+    $(document).on('click', '.js-price-add-row', function() {
+        priceState.cells = priceCellsFromDom();
+        const w = priceState.cells.length ? priceState.cells[0].length : 0;
+        priceState.cells.push(new Array(w).fill(''));
+        renderPriceEditor();
+    });
+
+    $(document).on('click', '.js-price-add-col', function() {
+        priceState.cells = priceCellsFromDom();
+        if (!priceState.cells.length) priceState.cells = [['']];
+        priceState.cells.forEach(function(row) { row.push(''); });
+        renderPriceEditor();
+    });
+
+    $(document).on('click', '.price-col-del', function() {
+        priceState.cells = priceCellsFromDom();
+        const c = parseInt($(this).data('col'), 10);
+        priceState.cells.forEach(function(row) { row.splice(c, 1); });
+        if (priceState.cells.length && priceState.cells[0].length === 0) {
+            priceState.cells.forEach(function(row) { row.push(''); });
+        }
+        renderPriceEditor();
+    });
+
+    $(document).on('click', '.price-row-del', function() {
+        priceState.cells = priceCellsFromDom();
+        const r = parseInt($(this).data('row'), 10);
+        priceState.cells.splice(r, 1);
+        if (!priceState.cells.length) priceState.cells = [['', '', '']];
+        renderPriceEditor();
+    });
+
+    $('#priceForm').on('submit', async function(e) {
+        e.preventDefault();
+        const id = $(this).find('[name="id"]').val();
+        const $btn = $(this).find('button[type=submit]');
+        const $err = $('.js-price-error');
+        $err.text('').addClass('hidden');
+
+        const cells = priceCellsFromDom();
+        const width = cells.reduce(function(m, r) { return Math.max(m, r.length); }, 0);
+        const norm = cells.map(function(r) {
+            return r.concat(new Array(width - r.length).fill(''));
+        });
+
+        const payload = {
+            title: $('#priceTitle').val(),
+            description: $('#priceDescription').val(),
+            order: parseInt($('#priceOrder').val() || 0, 10),
+            is_published: $('#pricePublished').is(':checked'),
+            cells: norm,
+        };
+
+        $btn.prop('disabled', true).text('Сохранение...');
+        try {
+            if (id) {
+                await API.put('/admin/prices/' + id + '/', payload);
+                showToast('Таблица обновлена');
+            } else {
+                await API.post('/admin/prices/', payload);
+                showToast('Таблица добавлена');
+            }
+            closePriceModal();
+            refreshPriceTables();
+        } catch (err) {
+            let msg = err.message || 'Не удалось сохранить таблицу';
+            if (err.data) {
+                for (const key in err.data) {
+                    const v = err.data[key];
+                    if (Array.isArray(v)) { msg = v[0]; break; }
+                    if (typeof v === 'string') { msg = v; break; }
+                }
+            }
+            $err.text(msg).removeClass('hidden');
+        } finally {
+            $btn.prop('disabled', false).text('Сохранить таблицу');
+        }
+    });
+
+    $(document).on('click', '.js-price-delete', function() {
+        const $btn = $(this);
+        const id = $btn.data('id');
+        askConfirm(
+            'Удалить таблицу?',
+            '<p class="muted">Таблица цен будет удалена с сайта.</p>',
+            'Удалить',
+            async function() {
+                $btn.prop('disabled', true);
+                try {
+                    await API.delete('/admin/prices/' + id + '/');
+                    showToast('Таблица удалена');
+                    refreshPriceTables();
+                } catch (err) {
+                    showToast(err.message || 'Не удалось удалить таблицу', 'error');
+                    $btn.prop('disabled', false);
+                }
+            }
+        );
+    });
+
     /* ===== Закрытие модалок по оверлею и Escape ===== */
-    $(document).on('mousedown', '#workModal, #serviceModal, #confirmModal', function(e) {
+    $(document).on('mousedown', '#workModal, #serviceModal, #priceModal, #confirmModal', function(e) {
         if (e.target === this) {
             closeWorkModal();
             closeServiceModal();
+            closePriceModal();
             closeConfirm();
         }
     });
@@ -730,6 +1024,7 @@ $(function() {
         if (e.key === 'Escape') {
             closeWorkModal();
             closeServiceModal();
+            closePriceModal();
             closeConfirm();
         }
     });

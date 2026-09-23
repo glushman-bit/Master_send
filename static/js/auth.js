@@ -95,7 +95,7 @@ $(function() {
         e.preventDefault();
         const user = API.user;
         if (user && !user.is_master) {
-            window.location.href = '/contacts/';
+            window.location.href = '/#order';
         } else {
             openWarningModal();
         }
