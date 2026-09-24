@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw
 
 from portfolio.models import PortfolioItem, PortfolioImage
 from prices.models import PriceTable
+from contacts.models import ContactPage
 from services.models import Service
 
 W, H = 800, 500
@@ -354,9 +355,21 @@ class Command(BaseCommand):
                 },
             )
 
+        ContactPage.objects.update_or_create(
+            defaults={
+                'phone': '+7 (999) 457-69-32',
+                'email': 'info@master-send.ru',
+                'address': 'г. Москва, ул. Мастеровая, д. 1',
+                'work_hours': 'Пн–Сб, с 10:00 до 19:00',
+                'is_published': True,
+            },
+        )
+
         services_count = Service.objects.count()
         portfolio_count = PortfolioItem.objects.count()
         prices_count = PriceTable.objects.count()
+        contacts_count = ContactPage.objects.count()
         self.stdout.write(self.style.SUCCESS(
-            f'Готово: услуг {services_count}, работ в портфолио {portfolio_count}, таблиц цен {prices_count}.'
+            f'Готово: услуг {services_count}, работ в портфолио {portfolio_count}, '
+            f'таблиц цен {prices_count}, контактов {contacts_count}.'
         ))
