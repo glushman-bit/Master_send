@@ -41,7 +41,7 @@
             </div>
             <div class="form-group">
                 <label>Телефон</label>
-                <input class="form-input" name="phone" maxlength="20">
+                <input class="form-input js-phone" name="phone" maxlength="20">
             </div>
             <div class="form-error hidden js-profile-error"></div>
             <button type="submit" class="btn btn-primary btn-block">Сохранить</button>
@@ -131,7 +131,7 @@ $(async function() {
         $form.find('[name="first_name"]').val(user.first_name || '');
         $form.find('[name="last_name"]').val(user.last_name || '');
         $form.find('[name="email"]').val(user.email || '');
-        $form.find('[name="phone"]').val(user.phone || '');
+        $form.find('[name="phone"]').val(formatPhoneValue(user.phone || ''));
         if (user.avatar) {
             $('#avatarPreviewImg').attr('src', user.avatar).removeClass('hidden');
             $('#avatarPreviewInitials').addClass('hidden');

@@ -7,7 +7,7 @@
     <div class="admin-panel-head">
         <div>
             <h2 class="admin-panel-title">Панель администратора</h2>
-            <p class="muted">Заявки, пользователи, работы портфолио, услуги и «О нас» — управление сайтом</p>
+            <p class="muted">Заявки, пользователи, работы портфолио, услуги, «О нас» и «Контакты» — управление сайтом</p>
         </div>
         <div class="admin-live" id="adminLive" title="Обновление онлайн">
             <span class="live-dot"></span>
@@ -203,7 +203,7 @@
             </div>
             <p class="muted">Текст и фотографии страницы «О нас» на сайте</p>
 
-            <div class="form-group about-layout" style="margin-top:14px; gap: 24px;">
+            <div class="form-group about-layout admin-about-layout" style="margin-top:14px; gap: 24px;">
                 <div class="form-group">
                     <label>Фотографии (можно несколько)</label>
                     <div class="work-img-list" id="aboutImgList"></div>
@@ -225,6 +225,32 @@
 
                     <div class="form-error hidden js-about-error"></div>
                     <button type="button" class="btn btn-primary js-about-save">Сохранить «О нас»</button>
+                </div>
+
+                <div class="admin-contacts-block">
+                    <h3>Контакты</h3>
+                    <div class="form-group" style="margin-top:0;">
+                        <label for="contactPhone">Телефон</label>
+                        <input class="form-input js-phone" id="contactPhone" maxlength="50"
+                               placeholder="Номер телефона">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactEmail">Email</label>
+                        <input class="form-input" id="contactEmail" type="email" maxlength="254"
+                               placeholder="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactAddress">Адрес</label>
+                        <input class="form-input" id="contactAddress" maxlength="300"
+                               placeholder="Адрес">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactHours">Режим работы</label>
+                        <input class="form-input" id="contactHours" maxlength="200"
+                               placeholder="Пн–Сб, с 10:00 до 19:00">
+                    </div>
+                    <div class="form-error hidden js-contact-error"></div>
+                    <button type="button" class="btn btn-primary js-contact-save">Сохранить контакты</button>
                 </div>
             </div>
         </div>
@@ -395,5 +421,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/admin-panel.js' %}?v=12"></script>
+<script src="{% static 'js/admin-panel.js' %}?v=19"></script>
 {% endblock %}

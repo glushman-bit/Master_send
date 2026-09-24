@@ -75,17 +75,14 @@
         <div class="contact-info">
             <div class="card">
                 <h3>Наши контакты</h3>
-                <p class="muted">📞 Телефон: <a href="tel:+79994576932">+7 (999) 457-69-32</a></p>
-                <p class="muted">✉️ Email: <a href="mailto:info@master-send.ru">info@master-send.ru</a></p>
-                <p class="muted">📍 Адрес: г. Москва, ул. Мастеровая, д. 1</p>
-                <p class="muted">🕘 Режим работы: Пн–Сб, с 10:00 до 19:00</p>
+                <div id="contactDetails"><p class="muted">Загрузка...</p></div>
             </div>
         </div>
         <div class="card order-form-card">
             <h2>Мы на связи</h2>
             <p class="muted">Позвоните нам или оставьте заявку в форме ниже — ответим в течение рабочего дня</p>
             <div class="hero-actions">
-                <a href="tel:+79994576932" class="btn btn-primary">Позвонить</a>
+                <a href="tel:+79994576932" class="btn btn-primary js-contact-call">Позвонить</a>
                 <a href="#order" class="btn btn-ghost js-add-order-only">Записаться на консультацию</a>
             </div>
         </div>
@@ -107,7 +104,7 @@
                 </div>
                 <div class="form-group">
                     <label for="orderPhone">Телефон</label>
-                    <input class="form-input" id="orderPhone" name="phone" type="tel" required maxlength="20">
+                    <input class="form-input js-phone" id="orderPhone" name="phone" type="tel" required maxlength="20">
                 </div>
                 <div class="form-group">
                     <label for="orderEmail">Email (необязательно)</label>
@@ -126,6 +123,10 @@
                 <div class="form-error hidden js-error"></div>
                 <button type="submit" class="btn btn-primary btn-block">Записаться на консультацию</button>
             </form>
+            <div class="order-success hidden">
+                <p class="order-success-text">Ваша заявка принята в работу</p>
+                <button type="button" class="btn btn-primary js-order-ok">ОК</button>
+            </div>
         </div>
 
         <div class="card order-form-card js-order-blocked hidden">
@@ -411,8 +412,8 @@ return '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loa
 
         try {
             await API.post('/orders/', data);
-            showToast('Заявка отправлена! Мы свяжемся с вами.');
-            $form.trigger('reset');
+            $form.addClass('hidden').trigger('reset');
+            $form.closest('.order-form-card').find('.order-success').removeClass('hidden');
         } catch (err) {
             let msg = err.message || 'Не удалось отправить заявку';
             if (err.data) {
@@ -427,6 +428,19 @@ return '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loa
             $btn.prop('disabled', false).text('Записаться на консультацию');
         }
     });
+
+    /* ===== Контакты ===== */
+    try {
+        const c = await API.get('/contacts/');
+        let ch = '';
+        if (c.phone) ch += '<span class="contact-label">📞 Телефон:</span><span class="contact-value"><a href="tel:' + esc(c.phone) + '">' + esc(c.phone) + '</a></span>';
+        if (c.email) ch += '<span class="contact-label">✉️ Email:</span><span class="contact-value"><a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a></span>';
+        if (c.address) ch += '<span class="contact-label">📍 Адрес:</span><span class="contact-value">' + esc(c.address) + '</span>';
+        if (c.work_hours) ch += '<span class="contact-label">🕘 Режим работы:</span><span class="contact-value">' + esc(c.work_hours) + '</span>';
+        if (!ch) ch = '<p class="muted">Контакты скоро появятся.</p>';
+        $('#contactDetails').html(ch);
+        if (c.phone) $('.js-contact-call').attr('href', 'tel:' + c.phone);
+    } catch (e) {}
 
     /* ===== Общее закрытие по Escape ===== */
     $(document).on('keydown', function(e) {
