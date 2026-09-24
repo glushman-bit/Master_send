@@ -8,6 +8,7 @@ from portfolio.views import PortfolioAdminViewSet
 from prices.views import AdminPriceViewSet
 from services.views import ServiceAdminViewSet
 from about.views import AdminAboutView
+from contacts.views import AdminContactView
 
 
 admin_router = DefaultRouter()
@@ -25,7 +26,9 @@ urlpatterns = [
     path('api/portfolio/', include('portfolio.urls')),
     path('api/orders/', include('orders.urls')),
     path('api/about/', include('about.urls')),
+    path('api/contacts/', include('contacts.urls')),
     path('api/admin/about/', AdminAboutView.as_view(), name='admin-about'),
+    path('api/admin/contacts/', AdminContactView.as_view(), name='admin-contacts'),
     path('api/prices/', include('prices.urls')),
     path('api/admin/', include(admin_router.urls)),
 
