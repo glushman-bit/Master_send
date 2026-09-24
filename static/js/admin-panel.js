@@ -57,6 +57,7 @@ $(function() {
             refreshServices(),
             refreshAbout(),
             refreshPriceTables(),
+            refreshContacts(),
         ]);
     }
 
@@ -134,9 +135,18 @@ $(function() {
                         '<span class="status status-' + esc(o.status) + '">' + esc(o.status_display) + '</span>' +
                         '<span class="admin-order-created muted">📅 ' + fmtDateTime(o.created_at) + '</span>' +
                     '</div>' +
-                    (o.user_name ? '<div class="muted">👤 ' + esc(o.user_name) + '</div>' : '') +
-                    '<div class="muted">📞 ' + esc(o.phone || '—') + (o.email ? ' • ✉️ ' + esc(o.email) : '') + '</div>' +
-                    '<div class="muted">' + esc(o.message) + '</div>' +
+                    '<div class="admin-order-body">' +
+                        '<div class="admin-order-meta">' +
+                            (o.user_name ? '<div class="muted">👤 ' + esc(o.user_name) + '</div>' : '') +
+                            '<div class="muted">📞 ' + esc(o.phone || '—') + (o.email ? ' • ✉️ ' + esc(o.email) : '') + '</div>' +
+                        '</div>' +
+                        '<div class="admin-order-right">' +
+                            (o.service_title ? '<div class="admin-order-service">' + esc(o.service_title) + '</div>' : '') +
+                            '<div class="admin-order-desc">' +
+                                '<div class="admin-order-desc-text">' + esc(o.message || '—') + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
                     '<div class="admin-order-actions">' + actions + '</div>' +
                 '</div>';
             }).join(''));
@@ -632,6 +642,7 @@ $(function() {
 
     /* ============ О нас ============ */
     var aboutState = { id: null, images: [], removed: [], newFiles: [], meta: {}, fileSeq: 0 };
+    var aboutDirty = false;
 
     function aboutImgControls(key, m) {
         const meta = m || { scale: 100, pos_x: 'center', pos_y: 'center' };
@@ -690,6 +701,7 @@ $(function() {
     }
 
     async function refreshAbout() {
+        if (aboutDirty) return;
         try {
             const data = await API.get('/admin/about/');
             aboutState = { id: data.id, images: data.images || [], removed: [], newFiles: [], meta: {}, fileSeq: 0 };
@@ -711,6 +723,7 @@ $(function() {
             aboutState.newFiles.push.apply(aboutState.newFiles, files);
         }
         this.value = '';
+        aboutDirty = true;
         renderAboutImages();
     });
 
@@ -726,16 +739,22 @@ $(function() {
             if (idx !== -1) aboutState.newFiles.splice(idx, 1);
             delete aboutState.meta[key];
         }
+        aboutDirty = true;
         renderAboutImages();
     });
 
     $(document).on('input change', '.about-scale, .about-posx, .about-posy', function() {
         const key = $(this).data('key');
         if (!key) return;
+        aboutDirty = true;
         const meta = aboutState.meta[key] || (aboutState.meta[key] = { scale: 100, pos_x: 'center', pos_y: 'center' });
         if ($(this).hasClass('about-scale')) meta.scale = parseInt(this.value, 10) || 100;
         if ($(this).hasClass('about-posx')) meta.pos_x = this.value;
         if ($(this).hasClass('about-posy')) meta.pos_y = this.value;
+    });
+
+    $(document).on('input change', '#aboutDescription, #aboutPublished', function() {
+        aboutDirty = true;
     });
 
     $(document).on('click', '.js-about-save', async function() {
@@ -784,6 +803,7 @@ $(function() {
             showToast('«О нас» сохранено');
             aboutState.newFiles = [];
             aboutState.removed = [];
+            aboutDirty = false;
             refreshAbout();
         } catch (err) {
             let msg = err.message || 'Не удалось сохранить';
@@ -797,6 +817,59 @@ $(function() {
             $err.text(msg).removeClass('hidden');
         } finally {
             $btn.prop('disabled', false).text('Сохранить «О нас»');
+        }
+    });
+
+    /* ============ Контакты ============ */
+    var contactDirty = false;
+
+    $(document).on('input change', '#contactPhone, #contactEmail, #contactAddress, #contactHours', function() {
+        contactDirty = true;
+    });
+
+    async function refreshContacts() {
+        if (contactDirty) return;
+        try {
+            const data = await API.get('/admin/contacts/');
+            $('#contactPhone').val(formatPhoneValue(data.phone || ''));
+            $('#contactEmail').val(data.email || '');
+            $('#contactAddress').val(data.address || '');
+            $('#contactHours').val(data.work_hours || '');
+        } catch (e) {
+            showToast('Не удалось загрузить контакты.', 'error');
+        }
+    }
+
+    $(document).on('click', '.js-contact-save', async function() {
+        const $btn = $(this);
+        const $err = $('.js-contact-error');
+        $err.text('').addClass('hidden');
+
+        const payload = {
+            phone: $('#contactPhone').val() || '',
+            email: $('#contactEmail').val() || '',
+            address: $('#contactAddress').val() || '',
+            work_hours: $('#contactHours').val() || '',
+        };
+
+        $btn.prop('disabled', true).text('Сохранение...');
+        try {
+            await API.put('/admin/contacts/', payload);
+            showToast('Контакты сохранены');
+            contactDirty = false;
+            refreshContacts();
+        } catch (err) {
+            let msg = err.message || 'Не удалось сохранить';
+            if (err.data) {
+                for (const key in err.data) {
+                    const v = err.data[key];
+                    if (Array.isArray(v)) { msg = v[0]; break; }
+                    if (typeof v === 'string') { msg = v; break; }
+                }
+            }
+            $err.text(msg).removeClass('hidden');
+        } finally {
+            $btn.prop('disabled', false).text('Сохранить контакты');
         }
     });
 

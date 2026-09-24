@@ -217,3 +217,44 @@ function nlToP(text, cls) {
         .map(p => '<p' + clsAttr + '>' + p.trim().split(/\n/).join('<br>') + '</p>')
         .join('');
 }
+
+function formatPhoneValue(value) {
+    let d = String(value || '').replace(/\D/g, '');
+    if (d.charAt(0) === '8' || d.charAt(0) === '7') d = d.slice(1);
+    d = d.slice(0, 10);
+    let out = '+7';
+    if (d.length > 0) out += ' (' + d.slice(0, 3);
+    if (d.length > 3) out += ') ' + d.slice(3, 6);
+    if (d.length > 6) out += '-' + d.slice(6, 8);
+    if (d.length > 8) out += '-' + d.slice(8, 10);
+    return out;
+}
+
+function formatPhoneEl(el) {
+    const val = el.value;
+    const caret = typeof el.selectionStart === 'number' ? el.selectionStart : val.length;
+    const digitsBefore = (val.slice(0, caret).match(/\d/g) || []).length;
+    const out = formatPhoneValue(val);
+    if (out === val) return;
+    el.value = out;
+    let pos = 0, n = 0;
+    if (caret === val.length) {
+        pos = out.length;
+    } else {
+        while (pos < out.length && n < digitsBefore) {
+            if (/\d/.test(out.charAt(pos))) n++;
+            pos++;
+        }
+    }
+    if (el.setSelectionRange) {
+        try { el.setSelectionRange(pos, pos); } catch (e) {}
+    }
+}
+
+$(document).on('input', '.js-phone', function() { formatPhoneEl(this); });
+
+$(document).on('click', '.js-order-ok', function() {
+    const $card = $(this).closest('.order-form-card');
+    $card.find('.order-success').addClass('hidden');
+    $card.find('form').removeClass('hidden');
+});
