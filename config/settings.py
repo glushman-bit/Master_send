@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 
     # own application
     'about',
+    'contacts',
     'core',
     'orders',
     'portfolio',
