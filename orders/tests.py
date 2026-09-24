@@ -48,6 +48,24 @@ class OrderTestCase(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(res.data['user'], self.client_user.id)
 
+    def test_admin_order_includes_service_title(self):
+        """Админский список заявок содержит название выбранной услуги."""
+        self.client.force_authenticate(self.client_user)
+        order = OrderRequest.objects.create(
+            name='Иван', phone='+70000000000', message='xxx',
+            service=self.service, user=self.client_user,
+        )
+        from django.contrib.auth import get_user_model
+        user_model = get_user_model()
+        self.client.force_authenticate(user_model.objects.create_superuser(
+            username='boss', password='Pass123!', email='boss@mail.ru'
+        ))
+        res = self.client.get('/api/orders/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        found = next((o for o in (res.data.get('results') or res.data) if o['id'] == order.id), None)
+        self.assertIsNotNone(found)
+        self.assertEqual(found['service_title'], self.service.title)
+
     def test_master_cannot_create_order(self):
         """Мастер не может создать заявку."""
         self.client.force_authenticate(self.master)
