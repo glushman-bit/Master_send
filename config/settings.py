@@ -23,8 +23,8 @@ if not SECRET_KEY:
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h.strip()] or (["*"] if DEBUG else [])
 
+BUILD_VERSION = os.getenv("BUILD_VERSION", "dev")
 
 # Application definition
 
@@ -75,6 +75,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.media',
+                'config.context_processors.build_version',
             ],
         },
     },
@@ -85,13 +88,28 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
+# DB_ENGINE=sqlite (по умолчанию) или postgres — для продакшна с docker-compose.
+DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite')
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DB_ENGINE == 'postgres':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'master_send'),
+            'USER': os.getenv('POSTGRES_USER', 'master_send'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+            'HOST': os.getenv('POSTGRES_HOST', 'db'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+            'CONN_MAX_AGE': int(os.getenv('POSTGRES_CONN_MAX_AGE', '60')),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -168,16 +186,32 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
 
 # ====== CORS ======
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False') == 'True'
-CORS_ALLOWED_ORIGINS = [
+_cors_env = [o.strip() for o in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()]
+CORS_ALLOWED_ORIGINS = _cors_env or [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
 ]
 
-# Email (console in dev)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'info@master-send.ru'
+# Надёжные origins для форм (CSRF) в проде, напр: https://master-send.ru,https://www.master-send.ru
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
+]
+
+# Email: в dev (DEBUG=True) — консоль, в проде — SMTP, если заданы EMAIL_HOST/EMAIL_PORT.
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
+EMAIL_BACKEND = (
+    'django.core.mail.backends.smtp.EmailBackend'
+    if EMAIL_HOST and not DEBUG
+    else 'django.core.mail.backends.console.EmailBackend'
+)
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'info@master-send.ru')
 ORDER_NOTIFY_RECIPIENTS = os.getenv('ORDER_NOTIFY_RECIPIENTS', 'info@master-send.ru')
 
 # ====== Безопасность в продакшене ======
