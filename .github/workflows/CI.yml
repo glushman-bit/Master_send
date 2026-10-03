@@ -14,6 +14,8 @@ jobs:
 
     env:
       SECRET_KEY: ci-test-secret-key
+      ALLOWED_HOSTS: "*"
+      SECURE_SSL_REDIRECT: "False"
 
     steps:
       - name: Checkout
