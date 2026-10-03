@@ -56,7 +56,8 @@ jobs:
             echo "Deploying version: ${IMAGE_TAG}"
             
             sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env
-            sed -i "s/^BUILD_VERSION=.*/BUILD_VERSION=${IMAGE_TAG}/" .env
+            BUILD_VERSION_SHORT="${IMAGE_TAG:0:7}"
+            sed -i "s/^BUILD_VERSION=.*/BUILD_VERSION=${BUILD_VERSION_SHORT}/" .env
             
             docker compose pull web
             docker compose up -d web
