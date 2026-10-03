@@ -36,4 +36,4 @@ jobs:
         run: poetry run python manage.py check
 
       - name: Run tests
-        run: poetry run python manage.py test about
+        run: poetry run python manage.py test about contacts core orders portfolio prices services users
