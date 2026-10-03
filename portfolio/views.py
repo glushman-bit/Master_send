@@ -9,6 +9,8 @@ from core.permissions import IsMaster
 from .models import PortfolioImage, PortfolioItem
 from .serializers import PortfolioItemSerializer
 
+from django.core.cache import cache
+
 
 class PortfolioViewSet(viewsets.ReadOnlyModelViewSet):
     """Список и детали опубликованных работ портфолио (read-only для всех)."""
@@ -19,11 +21,49 @@ class PortfolioViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Возвращает опубликованные работы, при необходимости фильтруя по услуге."""
-        qs = super().get_queryset()
+
+        qs = PortfolioItem.objects.filter(
+            is_published=True
+        ).select_related(
+            'service'
+        ).prefetch_related(
+            'images'
+        )
+
         service = self.request.query_params.get('service')
         if service:
             qs = qs.filter(service_id=service)
         return qs
+
+    def list(self, request, *args, **kwargs):
+        """Возвращает кэшированный список работ портфолио"""
+        query_string = request.query_params.urlencode()
+        cache_key = f'portfolio:list:{query_string}'
+
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+
+            cache.set(cache_key, response.data, timeout=300)
+
+            return response
+
+
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+
+        cache.set(cache_key, data, timeout=300)
+
+        return Response(data)
 
 
 class PortfolioAdminViewSet(viewsets.ModelViewSet):
