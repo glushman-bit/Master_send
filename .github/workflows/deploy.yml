@@ -14,6 +14,7 @@ jobs:
 
     env:
       IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+      BUILD_NUMBER: ${{ github.run_number }}
 
     steps:
       - name: Checkout
@@ -43,23 +44,26 @@ jobs:
         uses: appleboy/ssh-action@v1.2.2
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          BUILD_NUMBER: ${{ env.BUILD_NUMBER }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: IMAGE_TAG
+          envs: IMAGE_TAG,BUILD_NUMBER
           script: |
             set -e
             
             cd /var/www/master_send
             
-            echo "Deploying version: ${IMAGE_TAG}"
+            BUILD_VERSION="1.0.${BUILD_NUMBER}"
+            
+            echo "Deploying version: ${BUILD_VERSION}"
+            echo "Image tag: ${IMAGE_TAG}"
             
             sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env
-            BUILD_VERSION_SHORT="${IMAGE_TAG:0:7}"
-            sed -i "s/^BUILD_VERSION=.*/BUILD_VERSION=${BUILD_VERSION_SHORT}/" .env
+            sed -i "s/^BUILD_VERSION=.*/BUILD_VERSION=${BUILD_VERSION}/" .env
             
             docker compose pull web
             docker compose up -d web
             
-            echo "Deployment completed: ${IMAGE_TAG}"
+            echo "Deployment completed: ${BUILD_VERSION}"
