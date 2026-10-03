@@ -5,6 +5,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
 
 from core.permissions import IsMaster
+from .cache import invalidate_portfolio_cache
 
 from .models import PortfolioImage, PortfolioItem
 from .serializers import PortfolioItemSerializer
@@ -103,18 +104,32 @@ class PortfolioAdminViewSet(viewsets.ModelViewSet):
         """Создаёт работу и прикрепляет несколько фото «до»/«после»."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         instance = serializer.save()
         self._apply_images(instance, request)
+
+        invalidate_portfolio_cache()
+
         return Response(self.get_serializer(instance).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         """Обновляет работу и изменяет набор фото «до»/«после»."""
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial
+        )
+
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
+
         self._apply_images(instance, request)
+
+        invalidate_portfolio_cache()
+
         return Response(self.get_serializer(instance).data)
 
     def perform_destroy(self, instance):
@@ -122,4 +137,7 @@ class PortfolioAdminViewSet(viewsets.ModelViewSet):
         for img in instance.images.all():
             if img.image and img.image.name:
                 img.image.storage.delete(img.image.name)
+
         instance.delete()
+
+        invalidate_portfolio_cache()
