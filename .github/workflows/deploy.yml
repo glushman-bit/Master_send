@@ -1,0 +1,66 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - feature/create_2
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag glushman/master_send:${IMAGE_TAG} \
+            --tag glushman/master_send:latest \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push glushman/master_send:${IMAGE_TAG}
+          docker push glushman/master_send:latest
+          
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: IMAGE_TAG
+          script: |
+            set -e
+            
+            cd /var/www/master_send
+            
+            echo "Deploying version: ${IMAGE_TAG}"
+            
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env
+            sed -i "s/^BUILD_VERSION=.*/BUILD_VERSION=${IMAGE_TAG}/" .env
+            
+            docker compose pull web
+            docker compose up -d web
+            
+            echo "Deployment completed: ${IMAGE_TAG}"
+
