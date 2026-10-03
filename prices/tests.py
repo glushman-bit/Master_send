@@ -40,9 +40,7 @@ class PriceAdminTestCase(APITestCase):
     """Права и CRUD таблиц цен в админке."""
 
     def setUp(self):
-        self.client_user = User.objects.create_user(
-            username='client', password='Pass123!', email='client@mail.ru'
-        )
+        self.client_user = User.objects.create_user(username='client', password='Pass123!', email='client@mail.ru')
         self.master = User.objects.create_user(
             username='master', password='Pass123!', email='master@mail.ru', role='master'
         )
@@ -61,13 +59,17 @@ class PriceAdminTestCase(APITestCase):
     def test_master_can_create_and_normalize_cells(self):
         """Мастер создаёт таблицу; строки дополняются до одинаковой ширины."""
         self.client.force_authenticate(self.master)
-        res = self.client.post('/api/admin/prices/', {
-            'title': 'Покраска дисков',
-            'description': 'Цена включает пескоструй и покраску.',
-            'order': 1,
-            'is_published': True,
-            'cells': [['Диаметр', 'Легкосплав'], ['До D10', '5000,00']],
-        }, format='json')
+        res = self.client.post(
+            '/api/admin/prices/',
+            {
+                'title': 'Покраска дисков',
+                'description': 'Цена включает пескоструй и покраску.',
+                'order': 1,
+                'is_published': True,
+                'cells': [['Диаметр', 'Легкосплав'], ['До D10', '5000,00']],
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         table = PriceTable.objects.get(title='Покраска дисков')
         self.assertEqual(table.normalized_cells(), [['Диаметр', 'Легкосплав'], ['До D10', '5000,00']])
@@ -75,30 +77,43 @@ class PriceAdminTestCase(APITestCase):
     def test_invalid_cells_rejected(self):
         """Некорректный формат cells отклоняется."""
         self.client.force_authenticate(self.master)
-        res = self.client.post('/api/admin/prices/', {
-            'title': 'Плохая таблица',
-            'cells': 'not-a-list',
-        }, format='json')
+        res = self.client.post(
+            '/api/admin/prices/',
+            {
+                'title': 'Плохая таблица',
+                'cells': 'not-a-list',
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        res2 = self.client.post('/api/admin/prices/', {
-            'title': 'Плохая таблица',
-            'cells': [['ОК'], 'bad-row'],
-        }, format='json')
+        res2 = self.client.post(
+            '/api/admin/prices/',
+            {
+                'title': 'Плохая таблица',
+                'cells': [['ОК'], 'bad-row'],
+            },
+            format='json',
+        )
         self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_master_can_update_and_delete(self):
         """Мастер обновляет содержимое и удаляет таблицу."""
         table = PriceTable.objects.create(
-            title='Старая', cells=[['A', 'B'], ['1', '2']],
+            title='Старая',
+            cells=[['A', 'B'], ['1', '2']],
         )
         self.client.force_authenticate(self.master)
-        res = self.client.put(f'/api/admin/prices/{table.id}/', {
-            'title': 'Новая',
-            'description': '',
-            'order': 5,
-            'is_published': False,
-            'cells': [['Только заголовок']],
-        }, format='json')
+        res = self.client.put(
+            f'/api/admin/prices/{table.id}/',
+            {
+                'title': 'Новая',
+                'description': '',
+                'order': 5,
+                'is_published': False,
+                'cells': [['Только заголовок']],
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         table.refresh_from_db()
         self.assertEqual(table.title, 'Новая')

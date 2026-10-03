@@ -10,6 +10,7 @@ from prices.serializers import (
 
 class PricePublicViewSet(viewsets.ReadOnlyModelViewSet):
     """Публичный список таблиц цен (только опубликованные)."""
+
     queryset = PriceTable.objects.filter(is_published=True)
     serializer_class = PriceTableSerializer
     permission_classes = (permissions.AllowAny,)
@@ -18,6 +19,7 @@ class PricePublicViewSet(viewsets.ReadOnlyModelViewSet):
 
 class AdminPriceViewSet(viewsets.ModelViewSet):
     """Редактирование таблиц цен из панели администратора."""
+
     queryset = PriceTable.objects.all()
     serializer_class = PriceTableAdminSerializer
     permission_classes = (IsMaster,)

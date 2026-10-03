@@ -6,12 +6,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.permissions import IsMaster
+
 from .models import AboutPage
 from .serializers import AboutPageSerializer
 
 
 class AboutView(APIView):
     """Публичное API: последняя опубликованная страница «О нас»."""
+
     permission_classes = ()
 
     def get(self, request):
@@ -24,6 +26,7 @@ class AboutView(APIView):
 
 class AdminAboutView(APIView):
     """Управление страницей «О нас» (только для мастеров/администраторов)."""
+
     permission_classes = (IsMaster,)
 
     @staticmethod
@@ -78,7 +81,7 @@ class AdminAboutView(APIView):
                 if img:
                     AdminAboutView._apply_meta(img, entry)
 
-        next_order = (page.images.aggregate(m=models.Max('order'))['m'] or -1)
+        next_order = page.images.aggregate(m=models.Max('order'))['m'] or -1
         created = []
         for i, upload in enumerate(request.FILES.getlist('images')):
             created.append(page.images.create(image=upload, order=next_order + 1 + i))

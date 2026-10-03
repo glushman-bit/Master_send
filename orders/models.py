@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+
 from services.models import Service
 
 
@@ -12,8 +13,12 @@ class OrderRequest(models.Model):
         CANCELLED = 'cancelled', 'Отменена'
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-        null=False, blank=False, related_name='orders', verbose_name='Клиент',
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        related_name='orders',
+        verbose_name='Клиент',
     )
     name = models.CharField(max_length=100, verbose_name='Имя')
     phone = models.CharField(max_length=20, verbose_name='Телефон')

@@ -1,4 +1,5 @@
 """Аутентификация на базе JWT с проверкой активности пользователя."""
+
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 

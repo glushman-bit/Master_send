@@ -8,8 +8,7 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
@@ -33,7 +32,15 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('image', models.ImageField(upload_to='about/%Y/%m/', verbose_name='Фото')),
                 ('order', models.PositiveIntegerField(default=0, verbose_name='Порядок')),
-                ('page', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='about.aboutpage', verbose_name='Страница')),
+                (
+                    'page',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='images',
+                        to='about.aboutpage',
+                        verbose_name='Страница',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Фото страницы «О нас»',

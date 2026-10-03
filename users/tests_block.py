@@ -9,15 +9,11 @@ User = get_user_model()
 class UserBlockTestCase(APITestCase):
     def setUp(self):
         """Создаёт клиента, мастера и администратора для тестов блокировки."""
-        self.client_user = User.objects.create_user(
-            username='client', password='Pass123!', email='client@mail.ru'
-        )
+        self.client_user = User.objects.create_user(username='client', password='Pass123!', email='client@mail.ru')
         self.master = User.objects.create_user(
             username='master', password='Pass123!', email='master@mail.ru', role='master'
         )
-        self.admin = User.objects.create_superuser(
-            username='admin', password='Pass123!', email='admin@mail.ru'
-        )
+        self.admin = User.objects.create_superuser(username='admin', password='Pass123!', email='admin@mail.ru')
 
     def test_block_requires_auth(self):
         """Аноним не может блокировать пользователей."""
@@ -35,7 +31,8 @@ class UserBlockTestCase(APITestCase):
         self.client.force_authenticate(self.master)
         res = self.client.post(
             f'/api/auth/users/{self.client_user.id}/block/',
-            {'is_active': False}, format='json',
+            {'is_active': False},
+            format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertFalse(User.objects.get(pk=self.client_user.id).is_active)
@@ -48,7 +45,8 @@ class UserBlockTestCase(APITestCase):
         self.client.force_authenticate(self.master)
         res = self.client.post(
             f'/api/auth/users/{self.client_user.id}/block/',
-            {'is_active': True}, format='json',
+            {'is_active': True},
+            format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(User.objects.get(pk=self.client_user.id).is_active)
@@ -58,7 +56,8 @@ class UserBlockTestCase(APITestCase):
         self.client.force_authenticate(self.master)
         res = self.client.post(
             f'/api/auth/users/{self.admin.id}/block/',
-            {'is_active': False}, format='json',
+            {'is_active': False},
+            format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(User.objects.get(pk=self.admin.id).is_active)
@@ -68,7 +67,8 @@ class UserBlockTestCase(APITestCase):
         self.client.force_authenticate(self.master)
         res = self.client.post(
             f'/api/auth/users/{self.master.id}/block/',
-            {'is_active': False}, format='json',
+            {'is_active': False},
+            format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 

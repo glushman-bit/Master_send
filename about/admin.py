@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import AboutPage, AboutImage
+
+from .models import AboutImage, AboutPage
 
 
 class AboutImageInline(admin.TabularInline):

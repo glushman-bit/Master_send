@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.permissions import IsMaster
+
 from .models import ContactPage
 from .serializers import ContactPageSerializer
 
@@ -15,21 +16,30 @@ def _no_store(response):
 
 class ContactView(APIView):
     """Публичное API: последняя опубликованная контактная информация."""
+
     permission_classes = ()
 
     def get(self, request):
         """Возвращает контактную информацию."""
         page = ContactPage.objects.filter(is_published=True).first()
         if page is None:
-            return _no_store(Response({
-                'phone': '', 'email': '', 'address': '', 'work_hours': '',
-                'is_published': True,
-            }))
+            return _no_store(
+                Response(
+                    {
+                        'phone': '',
+                        'email': '',
+                        'address': '',
+                        'work_hours': '',
+                        'is_published': True,
+                    }
+                )
+            )
         return _no_store(Response(ContactPageSerializer(page).data))
 
 
 class AdminContactView(APIView):
     """Управление контактной информацией (только для мастеров/администраторов)."""
+
     permission_classes = (IsMaster,)
 
     @staticmethod

@@ -11,11 +11,17 @@ def copy_legacy_images(apps, schema_editor):
     for item in PortfolioItem.objects.all().iterator():
         if item.image_before:
             PortfolioImage.objects.create(
-                item_id=item.id, kind='before', image=item.image_before, order=0,
+                item_id=item.id,
+                kind='before',
+                image=item.image_before,
+                order=0,
             )
         if item.image_after:
             PortfolioImage.objects.create(
-                item_id=item.id, kind='after', image=item.image_after, order=0,
+                item_id=item.id,
+                kind='after',
+                image=item.image_after,
+                order=0,
             )
 
 
@@ -44,10 +50,23 @@ class Migration(migrations.Migration):
             name='PortfolioImage',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('kind', models.CharField(choices=[('before', 'До'), ('after', 'После')], max_length=10, verbose_name='Тип фото')),
+                (
+                    'kind',
+                    models.CharField(
+                        choices=[('before', 'До'), ('after', 'После')], max_length=10, verbose_name='Тип фото'
+                    ),
+                ),
                 ('image', models.ImageField(upload_to='portfolio/%Y/%m/', verbose_name='Фото')),
                 ('order', models.PositiveIntegerField(default=0, verbose_name='Порядок')),
-                ('item', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='portfolio.portfolioitem', verbose_name='Работа')),
+                (
+                    'item',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='images',
+                        to='portfolio.portfolioitem',
+                        verbose_name='Работа',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Фото работы',

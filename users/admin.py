@@ -9,9 +9,5 @@ User = get_user_model()
 class UserAdmin(BaseUserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'is_staff')
     list_filter = ('role', 'is_staff', 'is_active')
-    fieldsets = BaseUserAdmin.fieldsets + (
-        ('Дополнительно', {'fields': ('role', 'phone', 'avatar', 'bio')}),
-    )
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        ('Дополнительно', {'fields': ('role', 'phone', 'bio')}),
-    )
+    fieldsets = BaseUserAdmin.fieldsets + (('Дополнительно', {'fields': ('role', 'phone', 'avatar', 'bio')}),)
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (('Дополнительно', {'fields': ('role', 'phone', 'bio')}),)

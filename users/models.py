@@ -7,31 +7,11 @@ class User(AbstractUser):
         CLIENT = 'client', 'Клиент'
         MASTER = 'master', 'Мастер'
 
-    role = models.CharField(
-        max_length=10,
-        choices=Role.choices,
-        default=Role.CLIENT,
-        verbose_name='Роль'
-    )
-    phone = models.CharField(
-        max_length=20,
-        blank=True,
-        verbose_name='Телефон'
-    )
-    avatar = models.ImageField(
-        upload_to='avatars/%Y/%m/',
-        blank=True,
-        null=True,
-        verbose_name='Аватар'
-    )
-    bio = models.TextField(
-        blank=True,
-        max_length=500,
-        verbose_name='О себе'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    role = models.CharField(max_length=10, choices=Role.choices, default=Role.CLIENT, verbose_name='Роль')
+    phone = models.CharField(max_length=20, blank=True, verbose_name='Телефон')
+    avatar = models.ImageField(upload_to='avatars/%Y/%m/', blank=True, null=True, verbose_name='Аватар')
+    bio = models.TextField(blank=True, max_length=500, verbose_name='О себе')
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Пользователь'

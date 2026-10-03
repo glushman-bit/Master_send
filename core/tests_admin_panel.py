@@ -1,5 +1,5 @@
-from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
+from django.test import Client, TestCase
 
 User = get_user_model()
 
@@ -8,15 +8,11 @@ class AdminPanelViewTestCase(TestCase):
     def setUp(self):
         """Создаёт клиента, мастера и администратора для тестов панели."""
         self.client = Client()
-        self.client_user = User.objects.create_user(
-            username='client', password='Pass123!', email='client@mail.ru'
-        )
+        self.client_user = User.objects.create_user(username='client', password='Pass123!', email='client@mail.ru')
         self.master = User.objects.create_user(
             username='master', password='Pass123!', email='master@mail.ru', role='master'
         )
-        self.admin = User.objects.create_superuser(
-            username='admin', password='Pass123!', email='admin@mail.ru'
-        )
+        self.admin = User.objects.create_superuser(username='admin', password='Pass123!', email='admin@mail.ru')
 
     def test_admin_panel_requires_auth(self):
         """Анонимный пользователь не видит панель администратора."""
@@ -47,10 +43,14 @@ class AdminPanelViewTestCase(TestCase):
 
     def login_via_api(self, username):
         """Выполняет вход через API и оставляет сессию в тестовом клиенте."""
-        return self.client.post('/api/auth/login/', {
-            'username': username,
-            'password': 'Pass123!',
-        }, format='json')
+        return self.client.post(
+            '/api/auth/login/',
+            {
+                'username': username,
+                'password': 'Pass123!',
+            },
+            format='json',
+        )
 
     def test_admin_panel_opens_after_api_login_for_master(self):
         """После входа через API мастер видит панель администратора (серверный guard)."""

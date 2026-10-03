@@ -18,6 +18,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='orderrequest',
             name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='orders', to=settings.AUTH_USER_MODEL, verbose_name='Клиент'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='orders',
+                to=settings.AUTH_USER_MODEL,
+                verbose_name='Клиент',
+            ),
         ),
     ]

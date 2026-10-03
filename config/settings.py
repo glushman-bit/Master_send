@@ -1,8 +1,8 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -35,13 +35,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-
     # own application
     'about',
     'contacts',
@@ -148,12 +146,8 @@ AUTH_USER_MODEL = 'users.User'
 
 # ====== DRF ======
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'core.authentication.ActiveUserJWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': ('core.authentication.ActiveUserJWTAuthentication',),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticatedOrReadOnly',),
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
@@ -195,9 +189,7 @@ CORS_ALLOWED_ORIGINS = _cors_env or [
 ]
 
 # Надёжные origins для форм (CSRF) в проде, напр: https://master-send.ru,https://www.master-send.ru
-CSRF_TRUSTED_ORIGINS = [
-    o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
-]
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
 
 # Email: в dev (DEBUG=True) — консоль, в проде — SMTP, если заданы EMAIL_HOST/EMAIL_PORT.
 EMAIL_HOST = os.getenv('EMAIL_HOST', '')

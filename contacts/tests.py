@@ -32,9 +32,7 @@ class ContactAdminTestCase(APITestCase):
     def setUp(self):
         """Создаёт клиента и мастера."""
         super().setUp()
-        self.client_user = User.objects.create_user(
-            username='client', password='Pass123!', email='client@mail.ru'
-        )
+        self.client_user = User.objects.create_user(username='client', password='Pass123!', email='client@mail.ru')
         self.master = User.objects.create_user(
             username='master', password='Pass123!', email='master@mail.ru', role='master'
         )
@@ -61,12 +59,15 @@ class ContactAdminTestCase(APITestCase):
     def test_master_can_update_contacts(self):
         """Мастер обновляет контактную информацию."""
         self.client.force_authenticate(self.master)
-        res = self.client.put('/api/admin/contacts/', {
-            'phone': '+7 (999) 123-45-67',
-            'email': 'info@master-send.ru',
-            'address': 'г. Москва, ул. Мастеровая, д. 1',
-            'work_hours': 'Пн–Сб, с 10:00 до 19:00',
-        })
+        res = self.client.put(
+            '/api/admin/contacts/',
+            {
+                'phone': '+7 (999) 123-45-67',
+                'email': 'info@master-send.ru',
+                'address': 'г. Москва, ул. Мастеровая, д. 1',
+                'work_hours': 'Пн–Сб, с 10:00 до 19:00',
+            },
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         page = ContactPage.objects.get()
         self.assertEqual(page.phone, '+7 (999) 123-45-67')

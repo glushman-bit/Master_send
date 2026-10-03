@@ -11,15 +11,11 @@ User = get_user_model()
 class UserStatsTestCase(APITestCase):
     def setUp(self):
         """Создаёт клиента, мастера и администратора для тестов статистики."""
-        self.client_user = User.objects.create_user(
-            username='client', password='Pass123!', email='client@mail.ru'
-        )
+        self.client_user = User.objects.create_user(username='client', password='Pass123!', email='client@mail.ru')
         self.master = User.objects.create_user(
             username='master', password='Pass123!', email='master@mail.ru', role='master'
         )
-        self.admin = User.objects.create_superuser(
-            username='admin', password='Pass123!', email='admin@mail.ru'
-        )
+        self.admin = User.objects.create_superuser(username='admin', password='Pass123!', email='admin@mail.ru')
 
     def test_stats_requires_auth(self):
         """Статистика пользователей требует авторизации."""
@@ -71,19 +67,34 @@ class UserStatsTestCase(APITestCase):
     def test_user_list_returns_order_counts(self):
         """Список пользователей возвращает количества заказов по статусам."""
         service = Service.objects.create(
-            category=Service.Category.SAND, title='Пескоструй', description='x', price_from=1000,
+            category=Service.Category.SAND,
+            title='Пескоструй',
+            description='x',
+            price_from=1000,
         )
         OrderRequest.objects.create(
-            name='A', phone='+7', message='x', service=service,
-            status=OrderRequest.Status.NEW, user=self.admin,
+            name='A',
+            phone='+7',
+            message='x',
+            service=service,
+            status=OrderRequest.Status.NEW,
+            user=self.admin,
         )
         OrderRequest.objects.create(
-            name='B', phone='+7', message='x', service=service,
-            status=OrderRequest.Status.NEW, user=self.admin,
+            name='B',
+            phone='+7',
+            message='x',
+            service=service,
+            status=OrderRequest.Status.NEW,
+            user=self.admin,
         )
         OrderRequest.objects.create(
-            name='C', phone='+7', message='x', service=service,
-            status=OrderRequest.Status.IN_PROGRESS, user=self.admin,
+            name='C',
+            phone='+7',
+            message='x',
+            service=service,
+            status=OrderRequest.Status.IN_PROGRESS,
+            user=self.admin,
         )
 
         self.client.force_authenticate(self.admin)

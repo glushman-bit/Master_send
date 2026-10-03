@@ -11,14 +11,24 @@ PHONE_RE = re.compile(r'^\+?[\d\s()\-]{6,20}$')
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор профиля (read)."""
+
     initials = serializers.ReadOnlyField()
     is_master = serializers.ReadOnlyField()
 
     class Meta:
         model = User
         fields = (
-            'id', 'username', 'email', 'first_name', 'last_name',
-            'phone', 'avatar', 'bio', 'role', 'initials', 'is_master',
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'phone',
+            'avatar',
+            'bio',
+            'role',
+            'initials',
+            'is_master',
             'date_joined',
         )
         read_only_fields = ('id', 'username', 'role', 'date_joined')
@@ -26,6 +36,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Регистрация нового пользователя."""
+
     username = serializers.CharField(required=True, max_length=150)
     email = serializers.EmailField(required=True)
     first_name = serializers.CharField(required=True, max_length=150)
@@ -92,6 +103,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     """Обновление профиля."""
+
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email', 'phone', 'avatar', 'bio')

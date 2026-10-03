@@ -11,9 +11,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.permissions import IsMaster
 from orders.models import OrderRequest
+
 from .serializers import (
-    UserSerializer, RegisterSerializer,
-    ChangePasswordSerializer, ProfileUpdateSerializer,
+    ChangePasswordSerializer,
+    ProfileUpdateSerializer,
+    RegisterSerializer,
+    UserSerializer,
 )
 
 User = get_user_model()
@@ -27,6 +30,7 @@ def get_tokens_for_user(user):
 
 class RegisterView(generics.CreateAPIView):
     """Регистрация — возвращает JWT-токены."""
+
     queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
     throttle_classes = (ScopedRateThrottle,)
@@ -41,14 +45,18 @@ class RegisterView(generics.CreateAPIView):
         # Создаём Django-сессию, чтобы серверные guard-страницы (админ-панель) видели пользователя.
         login(request, user)
         tokens = get_tokens_for_user(user)
-        return Response({
-            'user': UserSerializer(user).data,
-            'tokens': tokens,
-        }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                'user': UserSerializer(user).data,
+                'tokens': tokens,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class LoginView(APIView):
     """Вход по username/email + password."""
+
     permission_classes = (permissions.AllowAny,)
     throttle_classes = (ScopedRateThrottle,)
     throttle_scope = 'login'
@@ -81,14 +89,17 @@ class LoginView(APIView):
         tokens = get_tokens_for_user(user)
         # Создаём Django-сессию, чтобы серверные guard-страницы (админ-панель) видели пользователя.
         login(request, user)
-        return Response({
-            'user': UserSerializer(user).data,
-            'tokens': tokens,
-        })
+        return Response(
+            {
+                'user': UserSerializer(user).data,
+                'tokens': tokens,
+            }
+        )
 
 
 class MeView(generics.RetrieveUpdateAPIView):
     """Текущий пользователь (GET — получить, PUT/PATCH — обновить)."""
+
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_serializer_class(self):
@@ -104,6 +115,7 @@ class MeView(generics.RetrieveUpdateAPIView):
 
 class ChangePasswordView(APIView):
     """Смена пароля."""
+
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
@@ -117,6 +129,7 @@ class ChangePasswordView(APIView):
 
 class LogoutView(APIView):
     """Отзыв refresh-токена."""
+
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
@@ -135,6 +148,7 @@ class LogoutView(APIView):
 
 class UserStatsView(APIView):
     """Статистика пользователей для панели администратора (только для мастеров)."""
+
     permission_classes = (IsMaster,)
 
     def get(self, request):
@@ -148,17 +162,20 @@ class UserStatsView(APIView):
         new_month = User.objects.filter(date_joined__gte=month_ago).count()
         active_week = User.objects.filter(last_login__gte=now - timedelta(days=7)).count()
 
-        return Response({
-            'total': total,
-            'clients': clients,
-            'masters': masters,
-            'new_month': new_month,
-            'active_week': active_week,
-        })
+        return Response(
+            {
+                'total': total,
+                'clients': clients,
+                'masters': masters,
+                'new_month': new_month,
+                'active_week': active_week,
+            }
+        )
 
 
 class UserListView(APIView):
     """Список пользователей с количеством заказов по статусам (только для мастеров)."""
+
     permission_classes = (IsMaster,)
 
     def get(self, request):
@@ -173,34 +190,37 @@ class UserListView(APIView):
 
         result = []
         for u in users:
-            result.append({
-                'id': u.id,
-                'username': u.username,
-                'first_name': u.first_name,
-                'last_name': u.last_name,
-                'email': u.email,
-                'phone': u.phone,
-                'avatar': u.avatar.url if u.avatar else None,
-                'role': u.role,
-                'initials': u.initials,
-                'date_joined': u.date_joined,
-                'is_master': u.is_master,
-                'is_active': u.is_active,
-                'is_superuser': u.is_superuser,
-                'orders': {
-                    'total': u.orders_total,
-                    'new': u.orders_new,
-                    'progress': u.orders_progress,
-                    'done': u.orders_done,
-                    'cancelled': u.orders_cancelled,
-                },
-            })
+            result.append(
+                {
+                    'id': u.id,
+                    'username': u.username,
+                    'first_name': u.first_name,
+                    'last_name': u.last_name,
+                    'email': u.email,
+                    'phone': u.phone,
+                    'avatar': u.avatar.url if u.avatar else None,
+                    'role': u.role,
+                    'initials': u.initials,
+                    'date_joined': u.date_joined,
+                    'is_master': u.is_master,
+                    'is_active': u.is_active,
+                    'is_superuser': u.is_superuser,
+                    'orders': {
+                        'total': u.orders_total,
+                        'new': u.orders_new,
+                        'progress': u.orders_progress,
+                        'done': u.orders_done,
+                        'cancelled': u.orders_cancelled,
+                    },
+                }
+            )
 
         return Response(result)
 
 
 class UserBlockView(APIView):
     """Блокировка/разблокировка пользователя (только для мастеров)."""
+
     permission_classes = (IsMaster,)
 
     def post(self, request, pk=None):
@@ -230,9 +250,11 @@ class UserBlockView(APIView):
             user.is_active = is_active
             user.save(update_fields=['is_active'])
 
-        return Response({
-            'id': user.id,
-            'username': user.username,
-            'is_active': user.is_active,
-            'detail': 'Пользователь заблокирован.' if not is_active else 'Пользователь разблокирован.',
-        })
+        return Response(
+            {
+                'id': user.id,
+                'username': user.username,
+                'is_active': user.is_active,
+                'detail': 'Пользователь заблокирован.' if not is_active else 'Пользователь разблокирован.',
+            }
+        )

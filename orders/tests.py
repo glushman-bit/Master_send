@@ -17,9 +17,7 @@ class OrderTestCase(APITestCase):
             description='Обработка дисков',
             price_from=1500,
         )
-        self.client_user = User.objects.create_user(
-            username='client', password='Pass123!', email='client@mail.ru'
-        )
+        self.client_user = User.objects.create_user(username='client', password='Pass123!', email='client@mail.ru')
         self.master = User.objects.create_user(
             username='master', password='Pass123!', email='master@mail.ru', role='master'
         )
@@ -52,14 +50,18 @@ class OrderTestCase(APITestCase):
         """Админский список заявок содержит название выбранной услуги."""
         self.client.force_authenticate(self.client_user)
         order = OrderRequest.objects.create(
-            name='Иван', phone='+70000000000', message='xxx',
-            service=self.service, user=self.client_user,
+            name='Иван',
+            phone='+70000000000',
+            message='xxx',
+            service=self.service,
+            user=self.client_user,
         )
         from django.contrib.auth import get_user_model
+
         user_model = get_user_model()
-        self.client.force_authenticate(user_model.objects.create_superuser(
-            username='boss', password='Pass123!', email='boss@mail.ru'
-        ))
+        self.client.force_authenticate(
+            user_model.objects.create_superuser(username='boss', password='Pass123!', email='boss@mail.ru')
+        )
         res = self.client.get('/api/orders/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         found = next((o for o in (res.data.get('results') or res.data) if o['id'] == order.id), None)
@@ -75,9 +77,7 @@ class OrderTestCase(APITestCase):
 
     def test_superuser_cannot_create_order(self):
         """Суперпользователь не может создать заявку."""
-        admin = User.objects.create_superuser(
-            username='admin', password='Pass123!', email='admin@mail.ru'
-        )
+        admin = User.objects.create_superuser(username='admin', password='Pass123!', email='admin@mail.ru')
         self.client.force_authenticate(admin)
         res = self.post_order()
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
@@ -86,10 +86,15 @@ class OrderTestCase(APITestCase):
     def test_model_rejects_master_user(self):
         """Модель отклоняет заявку от мастера при валидации."""
         from django.core.exceptions import ValidationError as DjangoValidationError
+
         from orders.models import OrderRequest as OR
+
         order = OR(
-            name='Иван', phone='+70000000000', message='xxx',
-            service=self.service, user=self.master,
+            name='Иван',
+            phone='+70000000000',
+            message='xxx',
+            service=self.service,
+            user=self.master,
         )
         with self.assertRaises(DjangoValidationError):
             order.full_clean()
@@ -99,7 +104,10 @@ class OrderTestCase(APITestCase):
         self.client.force_authenticate(self.client_user)
         self.post_order()
         OrderRequest.objects.create(
-            name='Другой', phone='+70000000000', message='xxx', service=self.service,
+            name='Другой',
+            phone='+70000000000',
+            message='xxx',
+            service=self.service,
             user=self.master,
         )
         res = self.client.get('/api/orders/')
@@ -111,7 +119,10 @@ class OrderTestCase(APITestCase):
         self.client.force_authenticate(self.client_user)
         self.post_order()
         OrderRequest.objects.create(
-            name='Другой', phone='+70000000000', message='xxx', service=self.service,
+            name='Другой',
+            phone='+70000000000',
+            message='xxx',
+            service=self.service,
             user=self.client_user,
         )
         self.client.force_authenticate(self.master)
@@ -149,7 +160,10 @@ class OrderTestCase(APITestCase):
         self.post_order()
         self.post_order()
         OrderRequest.objects.create(
-            name='Другой', phone='+70000000000', message='xxx', service=self.service,
+            name='Другой',
+            phone='+70000000000',
+            message='xxx',
+            service=self.service,
             user=self.client_user,
             status=OrderRequest.Status.IN_PROGRESS,
         )
@@ -172,7 +186,10 @@ class OrderTestCase(APITestCase):
         self.client.force_authenticate(self.client_user)
         self.post_order()
         OrderRequest.objects.create(
-            name='В работе', phone='+70000000000', message='xxx', service=self.service,
+            name='В работе',
+            phone='+70000000000',
+            message='xxx',
+            service=self.service,
             user=self.client_user,
             status=OrderRequest.Status.IN_PROGRESS,
         )
@@ -183,9 +200,7 @@ class OrderTestCase(APITestCase):
 
     def test_master_is_superuser(self):
         """Суперпользователь считается мастером и получает доступ к статистике."""
-        admin = User.objects.create_superuser(
-            username='admin', password='Pass123!', email='admin@mail.ru'
-        )
+        admin = User.objects.create_superuser(username='admin', password='Pass123!', email='admin@mail.ru')
         self.client.force_authenticate(admin)
         res = self.client.get('/api/orders/stats/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)

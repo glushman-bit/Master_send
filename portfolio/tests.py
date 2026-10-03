@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from core.tests_utils import TempMediaMixin
-from portfolio.models import PortfolioItem, PortfolioImage
+from portfolio.models import PortfolioImage, PortfolioItem
 from services.models import Service
 
 
@@ -18,21 +18,28 @@ class PortfolioTestCase(TempMediaMixin, APITestCase):
             price_from=1000,
         )
         item = PortfolioItem.objects.create(
-            service=service, title='Диски до/после', is_published=True,
+            service=service,
+            title='Диски до/после',
+            is_published=True,
         )
         PortfolioImage.objects.create(
-            item=item, kind='before',
+            item=item,
+            kind='before',
             image=SimpleUploadedFile('before.gif', b'GIF89a', content_type='image/gif'),
         )
         PortfolioImage.objects.create(
-            item=item, kind='after',
+            item=item,
+            kind='after',
             image=SimpleUploadedFile('after.gif', b'GIF89a', content_type='image/gif'),
         )
         hidden = PortfolioItem.objects.create(
-            service=service, title='Скрытая работа', is_published=False,
+            service=service,
+            title='Скрытая работа',
+            is_published=False,
         )
         PortfolioImage.objects.create(
-            item=hidden, kind='after',
+            item=hidden,
+            kind='after',
             image=SimpleUploadedFile('after2.gif', b'GIF89a', content_type='image/gif'),
         )
 

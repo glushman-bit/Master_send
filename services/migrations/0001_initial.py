@@ -7,15 +7,21 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='Service',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('category', models.CharField(choices=[('sand', 'Пескоструй'), ('powder', 'Порошковая покраска'), ('weld', 'Сварка')], max_length=10, verbose_name='Категория')),
+                (
+                    'category',
+                    models.CharField(
+                        choices=[('sand', 'Пескоструй'), ('powder', 'Порошковая покраска'), ('weld', 'Сварка')],
+                        max_length=10,
+                        verbose_name='Категория',
+                    ),
+                ),
                 ('title', models.CharField(max_length=150, verbose_name='Название')),
                 ('description', models.TextField(verbose_name='Описание')),
                 ('price_from', models.PositiveIntegerField(verbose_name='Цена от, ₽')),

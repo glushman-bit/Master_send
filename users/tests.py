@@ -73,30 +73,42 @@ class AuthTestCase(APITestCase):
     def test_login_by_username(self):
         """Вход по логину работает."""
         self.register()
-        res = self.client.post('/api/auth/login/', {
-            'username': 'ivan',
-            'password': 'StrongPass123!',
-        }, format='json')
+        res = self.client.post(
+            '/api/auth/login/',
+            {
+                'username': 'ivan',
+                'password': 'StrongPass123!',
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn('access', res.data['tokens'])
 
     def test_login_by_email(self):
         """Вход по email работает."""
         self.register()
-        res = self.client.post('/api/auth/login/', {
-            'username': 'IVAN@example.com',
-            'password': 'StrongPass123!',
-        }, format='json')
+        res = self.client.post(
+            '/api/auth/login/',
+            {
+                'username': 'IVAN@example.com',
+                'password': 'StrongPass123!',
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn('access', res.data['tokens'])
 
     def test_login_wrong_password(self):
         """Вход с неверным паролем отклоняется."""
         self.register()
-        res = self.client.post('/api/auth/login/', {
-            'username': 'ivan',
-            'password': 'wrong',
-        }, format='json')
+        res = self.client.post(
+            '/api/auth/login/',
+            {
+                'username': 'ivan',
+                'password': 'wrong',
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_login_deactivated_user_rejected(self):
@@ -106,10 +118,14 @@ class AuthTestCase(APITestCase):
         user.is_active = False
         user.save()
 
-        res = self.client.post('/api/auth/login/', {
-            'username': 'ivan',
-            'password': 'StrongPass123!',
-        }, format='json')
+        res = self.client.post(
+            '/api/auth/login/',
+            {
+                'username': 'ivan',
+                'password': 'StrongPass123!',
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertNotIn('access', res.data.get('tokens', {}))
 
@@ -129,17 +145,24 @@ class AuthTestCase(APITestCase):
     def test_profile_update_rejects_duplicate_email(self):
         """Обновление профиля отклоняет email, занятый другим пользователем."""
         self.register()
-        User.objects.create_user(
-            username='petr', password='Pass123!', email='petr@example.com'
-        )
-        tokens = self.client.post('/api/auth/login/', {
-            'username': 'petr', 'password': 'Pass123!',
-        }, format='json').data['tokens']
+        User.objects.create_user(username='petr', password='Pass123!', email='petr@example.com')
+        tokens = self.client.post(
+            '/api/auth/login/',
+            {
+                'username': 'petr',
+                'password': 'Pass123!',
+            },
+            format='json',
+        ).data['tokens']
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
 
-        res = self.client.patch('/api/auth/me/', {
-            'email': 'IVAN@example.com',
-        }, format='json')
+        res = self.client.patch(
+            '/api/auth/me/',
+            {
+                'email': 'IVAN@example.com',
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('email', res.data)
 
@@ -147,37 +170,53 @@ class AuthTestCase(APITestCase):
         """Пользователь может оставить свой email неизменным при обновлении."""
         tokens = self.register().data['tokens']
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
-        res = self.client.patch('/api/auth/me/', {
-            'email': 'ivan@example.com',
-            'first_name': 'Иван',
-        }, format='json')
+        res = self.client.patch(
+            '/api/auth/me/',
+            {
+                'email': 'ivan@example.com',
+                'first_name': 'Иван',
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_change_password(self):
         """Смена пароля работает, после неё вход с новым паролем возможен."""
         tokens = self.register().data['tokens']
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
-        res = self.client.post('/api/auth/change-password/', {
-            'old_password': 'StrongPass123!',
-            'new_password': 'NewStrongPass456!',
-        }, format='json')
+        res = self.client.post(
+            '/api/auth/change-password/',
+            {
+                'old_password': 'StrongPass123!',
+                'new_password': 'NewStrongPass456!',
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
         self.client.credentials()
-        login = self.client.post('/api/auth/login/', {
-            'username': 'ivan',
-            'password': 'NewStrongPass456!',
-        }, format='json')
+        login = self.client.post(
+            '/api/auth/login/',
+            {
+                'username': 'ivan',
+                'password': 'NewStrongPass456!',
+            },
+            format='json',
+        )
         self.assertEqual(login.status_code, status.HTTP_200_OK)
 
     def test_change_password_wrong_old(self):
         """Смена пароля отклоняется при неверном старом пароле."""
         tokens = self.register().data['tokens']
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
-        res = self.client.post('/api/auth/change-password/', {
-            'old_password': 'nope',
-            'new_password': 'NewStrongPass456!',
-        }, format='json')
+        res = self.client.post(
+            '/api/auth/change-password/',
+            {
+                'old_password': 'nope',
+                'new_password': 'NewStrongPass456!',
+            },
+            format='json',
+        )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
 
@@ -185,11 +224,15 @@ class CreateSuperuserCommandTestCase(TestCase):
     def setUp(self):
         """Задаёт переменные окружения с данными суперпользователя."""
         from unittest.mock import patch
-        self.patcher = patch.dict('os.environ', {
-            'ADMIN_USERNAME': 'boss',
-            'ADMIN_EMAIL': 'boss@example.com',
-            'ADMIN_PASSWORD': 'topsecret',
-        })
+
+        self.patcher = patch.dict(
+            'os.environ',
+            {
+                'ADMIN_USERNAME': 'boss',
+                'ADMIN_EMAIL': 'boss@example.com',
+                'ADMIN_PASSWORD': 'topsecret',
+            },
+        )
         self.patcher.start()
         self.addCleanup(self.patcher.stop)
 
@@ -218,6 +261,7 @@ class CreateSuperuserCommandTestCase(TestCase):
     def test_defaults_when_env_missing(self):
         """При отсутствии переменных окружения используются значения по умолчанию."""
         import os
+
         for k in ('ADMIN_USERNAME', 'ADMIN_PASSWORD'):
             os.environ.pop(k, None)
         call_command('csu')

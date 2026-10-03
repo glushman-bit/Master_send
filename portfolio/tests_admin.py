@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from core.tests_utils import TempMediaMixin
-from portfolio.models import PortfolioItem, PortfolioImage
+from portfolio.models import PortfolioImage, PortfolioItem
 from services.models import Service
 
 User = get_user_model()
@@ -32,9 +32,7 @@ class PortfolioAdminTestCase(TempMediaMixin, APITestCase):
             description='Обработка',
             price_from=1000,
         )
-        self.client_user = User.objects.create_user(
-            username='client', password='Pass123!', email='client@mail.ru'
-        )
+        self.client_user = User.objects.create_user(username='client', password='Pass123!', email='client@mail.ru')
         self.master = User.objects.create_user(
             username='master', password='Pass123!', email='master@mail.ru', role='master'
         )
@@ -55,10 +53,14 @@ class PortfolioAdminTestCase(TempMediaMixin, APITestCase):
     def test_master_can_list_all_works(self):
         """Мастер видит в админке и скрытые работы тоже."""
         item = PortfolioItem.objects.create(
-            service=self.service, title='Скрытая', is_published=False,
+            service=self.service,
+            title='Скрытая',
+            is_published=False,
         )
         PortfolioImage.objects.create(
-            item=item, kind='after', image=make_image('after.png'),
+            item=item,
+            kind='after',
+            image=make_image('after.png'),
         )
         self.client.force_authenticate(self.master)
         res = self.client.get('/api/admin/portfolio/')
@@ -69,14 +71,18 @@ class PortfolioAdminTestCase(TempMediaMixin, APITestCase):
     def test_master_can_create_work_with_many_images(self):
         """Мастер может создать работу с несколькими фото «до» и «после»."""
         self.client.force_authenticate(self.master)
-        res = self.client.post('/api/admin/portfolio/', {
-            'service': self.service.id,
-            'title': 'Новая работа',
-            'description': 'Описание',
-            'images_after': [self.img_after, make_image('after2.png', (200, 40, 40))],
-            'images_before': [self.img_before],
-            'is_published': 'true',
-        }, format='multipart')
+        res = self.client.post(
+            '/api/admin/portfolio/',
+            {
+                'service': self.service.id,
+                'title': 'Новая работа',
+                'description': 'Описание',
+                'images_after': [self.img_after, make_image('after2.png', (200, 40, 40))],
+                'images_before': [self.img_before],
+                'is_published': 'true',
+            },
+            format='multipart',
+        )
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         item = PortfolioItem.objects.get(title='Новая работа')
         self.assertEqual(item.images.filter(kind='after').count(), 2)
@@ -87,16 +93,24 @@ class PortfolioAdminTestCase(TempMediaMixin, APITestCase):
     def test_master_can_update_work(self):
         """Мастер может изменить работу."""
         item = PortfolioItem.objects.create(
-            service=self.service, title='Работа', is_published=True,
+            service=self.service,
+            title='Работа',
+            is_published=True,
         )
         PortfolioImage.objects.create(
-            item=item, kind='after', image=make_image('after.png'),
+            item=item,
+            kind='after',
+            image=make_image('after.png'),
         )
         self.client.force_authenticate(self.master)
-        res = self.client.patch(f'/api/admin/portfolio/{item.id}/', {
-            'title': 'Изменённая',
-            'is_published': 'false',
-        }, format='multipart')
+        res = self.client.patch(
+            f'/api/admin/portfolio/{item.id}/',
+            {
+                'title': 'Изменённая',
+                'is_published': 'false',
+            },
+            format='multipart',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         item.refresh_from_db()
         self.assertEqual(item.title, 'Изменённая')
@@ -106,13 +120,19 @@ class PortfolioAdminTestCase(TempMediaMixin, APITestCase):
         """Мастер может дополнить фото и удалить отдельные изображения."""
         item = PortfolioItem.objects.create(service=self.service, title='Работа')
         old = PortfolioImage.objects.create(
-            item=item, kind='before', image=make_image('old.png'),
+            item=item,
+            kind='before',
+            image=make_image('old.png'),
         )
         self.client.force_authenticate(self.master)
-        res = self.client.patch(f'/api/admin/portfolio/{item.id}/', {
-            'remove_images': json.dumps([old.id]),
-            'images_after': [make_image('new.png')],
-        }, format='multipart')
+        res = self.client.patch(
+            f'/api/admin/portfolio/{item.id}/',
+            {
+                'remove_images': json.dumps([old.id]),
+                'images_after': [make_image('new.png')],
+            },
+            format='multipart',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         item.refresh_from_db()
         self.assertFalse(item.images.filter(id=old.id).exists())
@@ -121,10 +141,14 @@ class PortfolioAdminTestCase(TempMediaMixin, APITestCase):
     def test_master_can_delete_work(self):
         """Мастер может удалить работу."""
         item = PortfolioItem.objects.create(
-            service=self.service, title='На удаление', is_published=True,
+            service=self.service,
+            title='На удаление',
+            is_published=True,
         )
         PortfolioImage.objects.create(
-            item=item, kind='after', image=make_image('after.png'),
+            item=item,
+            kind='after',
+            image=make_image('after.png'),
         )
         self.client.force_authenticate(self.master)
         res = self.client.delete(f'/api/admin/portfolio/{item.id}/')

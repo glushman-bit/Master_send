@@ -1,11 +1,12 @@
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Count
-from rest_framework import viewsets, permissions
+from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.permissions import IsMaster, IsNotMaster
+
 from .models import OrderRequest
 from .serializers import OrderRequestSerializer, OrderStatusUpdateSerializer
 
@@ -15,6 +16,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     - Клиент: может создавать заявку и видит только свои.
     - Мастер: видит все заявки и может менять статус, но не может создавать.
     """
+
     serializer_class = OrderRequestSerializer
 
     def get_permissions(self):
@@ -61,7 +63,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                 f'Задача:\n{order.message}\n'
             )
             send_mail(
-                subject, body,
+                subject,
+                body,
                 settings.DEFAULT_FROM_EMAIL,
                 [settings.ORDER_NOTIFY_RECIPIENTS],
                 fail_silently=True,
@@ -82,8 +85,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='stats')
     def stats(self, request):
         """Сводка по заявкам для панели администратора."""
-        counts = {c['status']: c['n'] for c in
-                  OrderRequest.objects.values('status').annotate(n=Count('id'))}
+        counts = {c['status']: c['n'] for c in OrderRequest.objects.values('status').annotate(n=Count('id'))}
         data = {
             'new': counts.get(OrderRequest.Status.NEW, 0),
             'in_progress': counts.get(OrderRequest.Status.IN_PROGRESS, 0),

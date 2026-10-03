@@ -1,11 +1,14 @@
-from rest_framework import viewsets, permissions
+from rest_framework import permissions, viewsets
+
+from core.permissions import IsMaster
+
 from .models import Service
 from .serializers import ServiceSerializer
-from core.permissions import IsMaster
 
 
 class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     """Список и детали услуг (read-only для всех)."""
+
     queryset = Service.objects.filter(is_active=True)
     serializer_class = ServiceSerializer
     permission_classes = (permissions.AllowAny,)
@@ -24,6 +27,7 @@ class ServiceAdminViewSet(viewsets.ModelViewSet):
     Управление услугами (только для мастеров/администраторов):
     создание, просмотр всех (в т.ч. неактивных), изменение, удаление.
     """
+
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
     permission_classes = (IsMaster,)

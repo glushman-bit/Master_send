@@ -1,15 +1,14 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from about.views import AdminAboutView
+from contacts.views import AdminContactView
 from portfolio.views import PortfolioAdminViewSet
 from prices.views import AdminPriceViewSet
 from services.views import ServiceAdminViewSet
-from about.views import AdminAboutView
-from contacts.views import AdminContactView
-
 
 admin_router = DefaultRouter()
 admin_router.register('portfolio', PortfolioAdminViewSet, basename='admin-portfolio')
@@ -19,7 +18,6 @@ admin_router.register('prices', AdminPriceViewSet, basename='admin-prices')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
     # API
     path('api/auth/', include('users.urls')),
     path('api/services/', include('services.urls')),
@@ -31,7 +29,6 @@ urlpatterns = [
     path('api/admin/contacts/', AdminContactView.as_view(), name='admin-contacts'),
     path('api/prices/', include('prices.urls')),
     path('api/admin/', include(admin_router.urls)),
-
     # Страницы
     path('', include('core.urls')),
 ]

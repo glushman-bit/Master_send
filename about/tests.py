@@ -7,8 +7,8 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from about.models import AboutImage, AboutPage
 from core.tests_utils import TempMediaMixin
-from about.models import AboutPage, AboutImage
 
 User = get_user_model()
 
@@ -47,9 +47,7 @@ class AboutAdminTestCase(TempMediaMixin, APITestCase):
     def setUp(self):
         """Создаёт клиента и мастера."""
         super().setUp()
-        self.client_user = User.objects.create_user(
-            username='client', password='Pass123!', email='client@mail.ru'
-        )
+        self.client_user = User.objects.create_user(username='client', password='Pass123!', email='client@mail.ru')
         self.master = User.objects.create_user(
             username='master', password='Pass123!', email='master@mail.ru', role='master'
         )
@@ -76,11 +74,15 @@ class AboutAdminTestCase(TempMediaMixin, APITestCase):
     def test_master_can_update_with_images(self):
         """Мастер обновляет описание и фотографии."""
         self.client.force_authenticate(self.master)
-        res = self.client.put('/api/admin/about/', {
-            'description': 'Новый текст о нас',
-            'is_published': 'true',
-            'images': [make_image('one.png'), make_image('two.png')],
-        }, format='multipart')
+        res = self.client.put(
+            '/api/admin/about/',
+            {
+                'description': 'Новый текст о нас',
+                'is_published': 'true',
+                'images': [make_image('one.png'), make_image('two.png')],
+            },
+            format='multipart',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         page = AboutPage.objects.get()
         self.assertEqual(page.description, 'Новый текст о нас')
@@ -92,11 +94,15 @@ class AboutAdminTestCase(TempMediaMixin, APITestCase):
         page = AboutPage.objects.create(description='Текст')
         old = AboutImage.objects.create(page=page, image=make_image('old.png'), order=0)
         self.client.force_authenticate(self.master)
-        res = self.client.put('/api/admin/about/', {
-            'description': 'Обновлён',
-            'remove_images': json.dumps([old.id]),
-            'images': [make_image('new.png')],
-        }, format='multipart')
+        res = self.client.put(
+            '/api/admin/about/',
+            {
+                'description': 'Обновлён',
+                'remove_images': json.dumps([old.id]),
+                'images': [make_image('new.png')],
+            },
+            format='multipart',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         page.refresh_from_db()
         self.assertFalse(page.images.filter(id=old.id).exists())
@@ -107,15 +113,23 @@ class AboutAdminTestCase(TempMediaMixin, APITestCase):
         page = AboutPage.objects.create(description='Текст')
         img = AboutImage.objects.create(page=page, image=make_image('photo.png'), order=0)
         self.client.force_authenticate(self.master)
-        res = self.client.put('/api/admin/about/', {
-            'description': 'Текст',
-            'images_meta': json.dumps([{
-                'id': img.id,
-                'scale': 150,
-                'pos_x': 'left',
-                'pos_y': 'bottom',
-            }]),
-        }, format='multipart')
+        res = self.client.put(
+            '/api/admin/about/',
+            {
+                'description': 'Текст',
+                'images_meta': json.dumps(
+                    [
+                        {
+                            'id': img.id,
+                            'scale': 150,
+                            'pos_x': 'left',
+                            'pos_y': 'bottom',
+                        }
+                    ]
+                ),
+            },
+            format='multipart',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         img.refresh_from_db()
         self.assertEqual(img.scale, 150)
@@ -128,14 +142,20 @@ class AboutAdminTestCase(TempMediaMixin, APITestCase):
     def test_master_can_set_size_and_position_for_new_images(self):
         """Размер и центрование применяются и к новым фотографиям."""
         self.client.force_authenticate(self.master)
-        res = self.client.put('/api/admin/about/', {
-            'description': 'Текст',
-            'images': [make_image('one.png'), make_image('two.png')],
-            'images_new_meta': json.dumps([
-                {'scale': 250, 'pos_x': 'right', 'pos_y': 'top'},
-                {'scale': 80, 'pos_x': 'left', 'pos_y': 'bottom'},
-            ]),
-        }, format='multipart')
+        res = self.client.put(
+            '/api/admin/about/',
+            {
+                'description': 'Текст',
+                'images': [make_image('one.png'), make_image('two.png')],
+                'images_new_meta': json.dumps(
+                    [
+                        {'scale': 250, 'pos_x': 'right', 'pos_y': 'top'},
+                        {'scale': 80, 'pos_x': 'left', 'pos_y': 'bottom'},
+                    ]
+                ),
+            },
+            format='multipart',
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         first, second = AboutImage.objects.order_by('order', 'id')
         self.assertEqual(first.scale, 250)
@@ -149,19 +169,31 @@ class AboutAdminTestCase(TempMediaMixin, APITestCase):
         """Некорректные значения размера/центрования не применяются."""
         page = AboutPage.objects.create(description='Текст')
         img = AboutImage.objects.create(
-            page=page, image=make_image('photo.png'), order=0,
-            scale=100, pos_x='center', pos_y='center',
+            page=page,
+            image=make_image('photo.png'),
+            order=0,
+            scale=100,
+            pos_x='center',
+            pos_y='center',
         )
         self.client.force_authenticate(self.master)
-        self.client.put('/api/admin/about/', {
-            'description': 'Текст',
-            'images_meta': json.dumps([{
-                'id': img.id,
-                'scale': 99999,
-                'pos_x': 'diagonal',
-                'pos_y': 42,
-            }]),
-        }, format='multipart')
+        self.client.put(
+            '/api/admin/about/',
+            {
+                'description': 'Текст',
+                'images_meta': json.dumps(
+                    [
+                        {
+                            'id': img.id,
+                            'scale': 99999,
+                            'pos_x': 'diagonal',
+                            'pos_y': 42,
+                        }
+                    ]
+                ),
+            },
+            format='multipart',
+        )
         img.refresh_from_db()
         self.assertEqual(img.scale, 100)
         self.assertEqual(img.pos_x, 'center')

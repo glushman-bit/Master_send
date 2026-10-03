@@ -13,12 +13,22 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='aboutimage',
             name='pos_x',
-            field=models.CharField(choices=[('left', 'Слева'), ('center', 'По центру'), ('right', 'Справа')], default='center', max_length=10, verbose_name='Центрование по горизонтали'),
+            field=models.CharField(
+                choices=[('left', 'Слева'), ('center', 'По центру'), ('right', 'Справа')],
+                default='center',
+                max_length=10,
+                verbose_name='Центрование по горизонтали',
+            ),
         ),
         migrations.AddField(
             model_name='aboutimage',
             name='pos_y',
-            field=models.CharField(choices=[('top', 'Сверху'), ('center', 'По центру'), ('bottom', 'Снизу')], default='center', max_length=10, verbose_name='Центрование по вертикали'),
+            field=models.CharField(
+                choices=[('top', 'Сверху'), ('center', 'По центру'), ('bottom', 'Снизу')],
+                default='center',
+                max_length=10,
+                verbose_name='Центрование по вертикали',
+            ),
         ),
         migrations.AddField(
             model_name='aboutimage',

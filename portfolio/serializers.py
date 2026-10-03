@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import PortfolioItem, PortfolioImage
+
+from .models import PortfolioImage, PortfolioItem
 
 
 class PortfolioImageSerializer(serializers.ModelSerializer):
@@ -14,5 +15,4 @@ class PortfolioItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PortfolioItem
-        fields = ('id', 'service', 'service_title', 'title', 'description',
-                  'images', 'is_published', 'created_at')
+        fields = ('id', 'service', 'service_title', 'title', 'description', 'images', 'is_published', 'created_at')

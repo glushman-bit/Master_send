@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import AboutPage, AboutImage
+
+from .models import AboutImage, AboutPage
 
 
 class AboutImageSerializer(serializers.ModelSerializer):

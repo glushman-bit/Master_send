@@ -1,16 +1,18 @@
 import json
 
 from django.db import models
-from rest_framework import viewsets, permissions, status
+from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
 
-from .models import PortfolioItem, PortfolioImage
-from .serializers import PortfolioItemSerializer
 from core.permissions import IsMaster
+
+from .models import PortfolioImage, PortfolioItem
+from .serializers import PortfolioItemSerializer
 
 
 class PortfolioViewSet(viewsets.ReadOnlyModelViewSet):
     """Список и детали опубликованных работ портфолио (read-only для всех)."""
+
     queryset = PortfolioItem.objects.filter(is_published=True)
     serializer_class = PortfolioItemSerializer
     permission_classes = (permissions.AllowAny,)
@@ -29,6 +31,7 @@ class PortfolioAdminViewSet(viewsets.ModelViewSet):
     Управление работами портфолио (только для мастеров/администраторов):
     создание, просмотр всех (в т.ч. скрытых), изменение, удаление.
     """
+
     queryset = PortfolioItem.objects.all()
     serializer_class = PortfolioItemSerializer
     permission_classes = (IsMaster,)

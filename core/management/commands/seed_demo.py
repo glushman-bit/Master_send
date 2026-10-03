@@ -7,9 +7,9 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from PIL import Image, ImageDraw
 
-from portfolio.models import PortfolioItem, PortfolioImage
-from prices.models import PriceTable
 from contacts.models import ContactPage
+from portfolio.models import PortfolioImage, PortfolioItem
+from prices.models import PriceTable
 from services.models import Service
 
 W, H = 800, 500
@@ -18,7 +18,7 @@ W, H = 800, 500
 def hex_rgb(value: str):
     """Преобразует hex-строку цвета в кортеж (R, G, B)."""
     value = value.lstrip('#')
-    return tuple(int(value[i:i + 2], 16) for i in (0, 2, 4))
+    return tuple(int(value[i : i + 2], 16) for i in (0, 2, 4))
 
 
 def _mix(c1, c2, t):
@@ -70,8 +70,7 @@ def make_image(label: str, bg_top, bg_bottom, slug: str, disc_color, dirty: bool
     sd = ImageDraw.Draw(shadow)
     for k in range(8, 0, -1):
         r = int(radius * (0.75 + 0.05 * (8 - k)))
-        sd.ellipse([cx - r, cy + 26 - int(r * 0.62), cx + r, cy + 26 + int(r * 0.62)],
-                   fill=(0, 0, 0, 26))
+        sd.ellipse([cx - r, cy + 26 - int(r * 0.62), cx + r, cy + 26 + int(r * 0.62)], fill=(0, 0, 0, 26))
     img = Image.alpha_composite(img.convert('RGBA'), shadow)
     draw = ImageDraw.Draw(img)
 
@@ -96,8 +95,7 @@ def make_image(label: str, bg_top, bg_bottom, slug: str, disc_color, dirty: bool
             px[xx, yy] = col
 
     # --- Обод: тёмное кольцо (резина/край диска) ---
-    draw.ellipse([cx - radius, cy - radius, cx + radius, cy + radius],
-                 outline=(8, 8, 10), width=14)
+    draw.ellipse([cx - radius, cy - radius, cx + radius, cy + radius], outline=(8, 8, 10), width=14)
 
     # --- Спицы: затемнение клиньями ---
     spoke_img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
@@ -233,18 +231,53 @@ class Command(BaseCommand):
 
     PORTFOLIO = [
         # (title, category, tags, bg_top, bg_bottom, disc_color_after)
-        ('Пескоструй и покраска дисков BMW', Service.Category.SAND, 'пескоструй, порошковая покраска', '#b8bec6', '#5b636e', '#c8a23a'),
-        ('Кованые диски Audi — восстановление', Service.Category.SAND, 'пескоструй, порошок RAL 1015', '#c2bfb2', '#6a665a', '#d9d2ba'),
-        ('Забор из профнастила', Service.Category.WELD, 'сварка, порошковая покраска', '#8a927b', '#3a4032', '#7a8a5a'),
-        ('Распашные ворота с калиткой', Service.Category.WELD, 'сварка, грунт, покраска', '#b0a48c', '#5a4e3a', '#8a5a3a'),
-        ('Бампер внедорожника — чёрный мат', Service.Category.POWDER, 'порошковая покраска RAL 9005', '#8b929b', '#3d4248', '#292c30'),
+        (
+            'Пескоструй и покраска дисков BMW',
+            Service.Category.SAND,
+            'пескоструй, порошковая покраска',
+            '#b8bec6',
+            '#5b636e',
+            '#c8a23a',
+        ),
+        (
+            'Кованые диски Audi — восстановление',
+            Service.Category.SAND,
+            'пескоструй, порошок RAL 1015',
+            '#c2bfb2',
+            '#6a665a',
+            '#d9d2ba',
+        ),
+        (
+            'Забор из профнастила',
+            Service.Category.WELD,
+            'сварка, порошковая покраска',
+            '#8a927b',
+            '#3a4032',
+            '#7a8a5a',
+        ),
+        (
+            'Распашные ворота с калиткой',
+            Service.Category.WELD,
+            'сварка, грунт, покраска',
+            '#b0a48c',
+            '#5a4e3a',
+            '#8a5a3a',
+        ),
+        (
+            'Бампер внедорожника — чёрный мат',
+            Service.Category.POWDER,
+            'порошковая покраска RAL 9005',
+            '#8b929b',
+            '#3d4248',
+            '#292c30',
+        ),
     ]
 
     PRICE_TABLES = [
         {
             'title': 'Стоимость покраски дисков, руб',
             'description': 'Предлагаем покраску дисков порошковой краской, цена на которую включает: '
-                           'пескоструйную обработку, порошковую грунтовку и порошковую покраску всей поверхности диска.',
+            'пескоструйную обработку, порошковую грунтовку и порошковую покраску всей поверхности диска.',
             'order': 1,
             'cells': [
                 [
@@ -279,7 +312,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         """Добавляет аргумент командной строки --flush."""
         parser.add_argument(
-            '--flush', action='store_true',
+            '--flush',
+            action='store_true',
             help='Удалить существующие услуги и работы перед заполнением.',
         )
 
@@ -338,11 +372,24 @@ class Command(BaseCommand):
             obj.save()
             self._reset_images(obj)
             before_slug = image_slug(obj.title) + '_before'
-            self._add_image(obj, PortfolioImage.Kind.BEFORE, 'ДО', '#9aa0a8', '#4c525a', '#6a6d72', dirty=True, slug=before_slug)
+            self._add_image(
+                obj, PortfolioImage.Kind.BEFORE, 'ДО', '#9aa0a8', '#4c525a', '#6a6d72', dirty=True, slug=before_slug
+            )
             after_slug = image_slug(obj.title)
-            self._add_image(obj, PortfolioImage.Kind.AFTER, 'ПОСЛЕ', bg_top, bg_bottom, disc_color, dirty=False, slug=after_slug)
+            self._add_image(
+                obj, PortfolioImage.Kind.AFTER, 'ПОСЛЕ', bg_top, bg_bottom, disc_color, dirty=False, slug=after_slug
+            )
             variant = '#%02x%02x%02x' % _shade(hex_rgb(disc_color), 1.18)
-            self._add_image(obj, PortfolioImage.Kind.AFTER, 'ПОСЛЕ 2', bg_top, bg_bottom, variant, dirty=False, slug=after_slug + '_v2')
+            self._add_image(
+                obj,
+                PortfolioImage.Kind.AFTER,
+                'ПОСЛЕ 2',
+                bg_top,
+                bg_bottom,
+                variant,
+                dirty=False,
+                slug=after_slug + '_v2',
+            )
 
         for table in self.PRICE_TABLES:
             PriceTable.objects.update_or_create(
@@ -369,7 +416,9 @@ class Command(BaseCommand):
         portfolio_count = PortfolioItem.objects.count()
         prices_count = PriceTable.objects.count()
         contacts_count = ContactPage.objects.count()
-        self.stdout.write(self.style.SUCCESS(
-            f'Готово: услуг {services_count}, работ в портфолио {portfolio_count}, '
-            f'таблиц цен {prices_count}, контактов {contacts_count}.'
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'Готово: услуг {services_count}, работ в портфолио {portfolio_count}, '
+                f'таблиц цен {prices_count}, контактов {contacts_count}.'
+            )
+        )

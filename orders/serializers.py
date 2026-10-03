@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from .models import OrderRequest
 
 
@@ -9,9 +10,21 @@ class OrderRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderRequest
-        fields = ('id', 'user', 'user_name', 'name', 'phone', 'email',
-                  'service', 'service_title', 'message', 'status', 'status_display',
-                  'created_at', 'updated_at')
+        fields = (
+            'id',
+            'user',
+            'user_name',
+            'name',
+            'phone',
+            'email',
+            'service',
+            'service_title',
+            'message',
+            'status',
+            'status_display',
+            'created_at',
+            'updated_at',
+        )
         read_only_fields = ('id', 'user', 'status', 'created_at', 'updated_at')
 
     def validate(self, data):

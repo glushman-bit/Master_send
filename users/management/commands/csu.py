@@ -11,6 +11,7 @@ class Command(BaseCommand):
     Логин/пароль берутся из переменных окружения ADMIN_USERNAME и ADMIN_PASSWORD.
     Если пароль не задан, используется значение по умолчанию 'admin'.
     """
+
     help = 'Создаёт суперпользователя из ADMIN_USERNAME / ADMIN_PASSWORD (по умолчанию admin/admin).'
 
     def handle(self, *args, **options):
@@ -31,6 +32,6 @@ class Command(BaseCommand):
         user.save()
 
         verb = 'создан' if created else 'обновлён'
-        self.stdout.write(self.style.SUCCESS(
-            f'Суперпользователь "{username}" {verb}. Логин: {username}, пароль: {password}.'
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(f'Суперпользователь "{username}" {verb}. Логин: {username}, пароль: {password}.')
+        )

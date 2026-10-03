@@ -1,7 +1,6 @@
 services:
   web:
-    build: .
-#    image: glushman/master_send:${IMAGE_TAG}
+    image: glushman/master_send:${IMAGE_TAG}
     container_name: master_send_web
     command: >
       sh -c "
