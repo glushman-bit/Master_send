@@ -7,7 +7,6 @@ on:
       - completed
     branches:
       - feature/create_2
-
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -63,4 +62,3 @@ jobs:
             docker compose up -d web
             
             echo "Deployment completed: ${IMAGE_TAG}"
-
