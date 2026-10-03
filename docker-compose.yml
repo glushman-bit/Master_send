@@ -15,6 +15,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - .env
     restart: unless-stopped
@@ -44,6 +46,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: master_send_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   nginx:
     image: nginx:1.27-alpine
@@ -75,3 +90,4 @@ volumes:
   static_volume:
   media_volume:
   certbot-www:
+  redis-data:
