@@ -31,10 +31,19 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
     env:
       SECRET_KEY: ci-test-secret-key
       ALLOWED_HOSTS: "*"
       SECURE_SSL_REDIRECT: "False"
+      REDIS_HOST: localhost
+      REDIS_PORT: "6379"
+      REDIS_DB: "1"
 
     steps:
       - name: Checkout
