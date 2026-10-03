@@ -6,10 +6,10 @@
     --surface-3: #e5ecf5;
     --text: #0f172a;
     --text-muted: #000000;
-    --accent: #f59e0b;
+    --accent: #e69f25;
     --accent-hover: #201506;
     --accent-light: rgba(245, 158, 11, 0.12);
-    --border: #e2e8f0;
+    --border: #b6cef4;
     --border-strong: #cbd5e1;
     --danger: #ef4444;
     --danger-light: rgba(239, 68, 68, 0.12);
@@ -31,7 +31,7 @@ body {
     font-family: var(--font);
     background:
         linear-gradient(rgba(248, 250, 252, 0.55) 0%, rgba(255, 255, 255, 0.62) 100%),
-        url('../img/melnica-bg.jpg') center / cover no-repeat fixed;
+        url('../img/fon.jpg') center / cover no-repeat fixed;
     color: var(--text);
     line-height: 1.4;
     overflow-x: hidden;
@@ -60,18 +60,18 @@ img { max-width: 100%; display: block; }
 /* ===== Header ===== */
 .site-header {
     position: sticky; top: 0; z-index: 100;
-    background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.8) 100%);
+    background: linear-gradient(180deg, rgb(227 232 239) 0%, rgb(179 198 211 / 0.8) 100%);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
     transition: all 0.3s;
 }
-.site-header.scrolled { background: rgba(255, 255, 255, 0.98); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.site-header.scrolled { background: rgb(223 227 236); box-shadow: 0 2px 10px rgb(243 240 240 / 0.05); }
 .header-inner { display: flex; align-items: center; gap: 28px; height: 72px; }
 .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
 .logo span { color: var(--accent); }
 .logo:hover { text-decoration: none; }
 .main-nav { display: flex; gap: 26px; }
-.main-nav a { font-size: 17px; font-weight: 500; color: var(--text); transition: color 0.15s; }
+.main-nav a { font-size: 16px; font-weight: 500; color: var(--text); transition: color 0.15s; }
 .main-nav a:hover { color: var(--accent); text-decoration: none; }
 .header-phone { color: var(--accent); font-weight: 700; font-size: 15px; white-space: nowrap; }
 .header-phone:hover { color: var(--accent-hover); text-decoration: none; }
@@ -192,9 +192,9 @@ img { max-width: 100%; display: block; }
     padding: 8px 16px;
     border: 1px solid var(--accent);
     border-radius: 2px;
-    background: rgba(255, 255, 255, 0.9);
+    /*background: rgb(182 206 244);*/
     color: var(--accent-hover);
-    font-size: 12px; font-weight: 700;
+    font-size: 28px; font-weight: 700;
     letter-spacing: 0.15em; text-transform: uppercase;
     margin-bottom: 24px;
 }
