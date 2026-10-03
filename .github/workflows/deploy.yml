@@ -67,5 +67,3 @@ jobs:
             docker compose up -d web
             
             echo "Deployment completed: ${BUILD_VERSION}"
-
-
