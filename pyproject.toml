@@ -17,8 +17,43 @@ pillow = "^12.3.0"
 ipython = "^9.17.1"
 gunicorn = "^23.0.0"
 psycopg = { version = "^3.2.0", extras = ["binary"] }
+flake8 = "^7.4.1"
+black = "^26.5.1"
+isort = "^9.0.2"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 119
+skip-string-normalization = true
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+# максимальная длина строки
+profile = "black"
+line_length = 119
+skip = [".venv", "venv"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+show_error_codes = true
+exclude = "venv/|.venv/|build/|dist/|.mypy_cache/"
