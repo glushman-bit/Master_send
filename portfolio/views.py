@@ -58,7 +58,6 @@ class PortfolioViewSet(viewsets.ReadOnlyModelViewSet):
 
             return response
 
-
         serializer = self.get_serializer(queryset, many=True)
         data = serializer.data
 

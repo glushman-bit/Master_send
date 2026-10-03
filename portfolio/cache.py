@@ -22,6 +22,7 @@ def make_portfolio_cache_key(query_string):
 
     return f'portfolio:{version}:list:{query_string}'
 
+
 def invalidate_portfolio_cache():
     version = uuid.uuid4().hex
     cache.set(CACHE_VERSION_KEY, version, timeout=None)
