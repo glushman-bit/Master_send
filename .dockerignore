@@ -22,3 +22,5 @@ db
 Qwen
 
 docker-compose.yaml
+
+deploy

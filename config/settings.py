@@ -141,6 +141,14 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ====== Ограничения загрузки файлов ======
+# Максимальный размер multipart-запроса (все фото работы разом).
+MAX_UPLOAD_SIZE_MB = int(os.getenv('MAX_UPLOAD_SIZE_MB', '50'))
+DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+# Файлы крупнее этого объёма Django пишет во временные файлы, а не держит в памяти.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_PERMISSIONS = 0o644
+
 # ===== Кастомная модель пользователя =====
 AUTH_USER_MODEL = 'users.User'
 
