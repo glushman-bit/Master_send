@@ -10,16 +10,27 @@
             <h1>Подтверждение email</h1>
             <p class="muted">Проверяем вашу ссылку…</p>
         </div>
-        <div id="verifyState" class="js-verify-pending">
+        <div id="verifyState" class="js-verify-pane">
             <p class="muted">Пожалуйста, подождите.</p>
         </div>
-        <div id="verifySuccess" class="hidden">
+        <div id="verifySuccess" class="js-verify-pane hidden">
             <p style="font-size:17px; font-weight:600; margin:0 0 8px;">Email подтверждён!</p>
-            <p class="muted" style="margin:0 0 24px;">Ваш аккаунт активирован. Перенаправляем ко входу…</p>
+            <p class="muted" style="margin:0 0 24px;">Ваш аккаунт активирован. Теперь вы можете оставлять заявки.</p>
+            <button type="button" class="btn btn-primary btn-block js-verify-ok">ОК</button>
         </div>
-        <div id="verifyError" class="hidden">
-            <p class="warning-text" style="margin:0 0 20px;">Не удалось подтвердить email. Ссылка недействительна или истекла.</p>
-            <a href="{% url 'core:home' %}#contacts" class="btn btn-ghost btn-block">На главную</a>
+        <div id="verifyAlready" class="js-verify-pane hidden">
+            <p style="font-size:17px; font-weight:600; margin:0 0 8px;">Email уже подтверждён</p>
+            <p class="muted" style="margin:0 0 24px;">Ваш адрес электронной почты уже подтверждён, повторная активация не требуется.</p>
+            <button type="button" class="btn btn-primary btn-block js-verify-ok">ОК</button>
+        </div>
+        <div id="verifyExpired" class="js-verify-pane hidden">
+            <p class="warning-text" style="margin:0 0 20px;" id="verifyExpiredText">Срок действия ссылки истёк.</p>
+            <button type="button" class="btn btn-ghost btn-block js-verify-resend hidden">Отправить письмо ещё раз</button>
+            <button type="button" class="btn btn-primary btn-block js-verify-ok" style="margin-top:10px;">ОК</button>
+        </div>
+        <div id="verifyInvalid" class="js-verify-pane hidden">
+            <p class="warning-text" style="margin:0 0 20px;">Ссылка недействительна.</p>
+            <button type="button" class="btn btn-primary btn-block js-verify-ok">ОК</button>
         </div>
     </div>
 </div>
@@ -28,10 +39,46 @@
 {% block scripts %}
 <script>
 $(function() {
+    var lastEmail = '';
+    // Куда вести кнопку ОК: 'login', 'register' или '' (просто на главную).
+    var okMode = '';
+    var okToast = '';
+
+    function showPane(selector) {
+        $('.js-verify-pane').addClass('hidden');
+        $(selector).removeClass('hidden');
+    }
+
+    function goHome() {
+        var payload = {mode: okMode || '', email: lastEmail || ''};
+        if (okToast) {
+            payload.toast = okToast;
+        }
+        try { sessionStorage.setItem('mh_auth_redirect', JSON.stringify(payload)); } catch (e) {}
+        location.replace('/');
+    }
+
+    $(document).on('click', '.js-verify-ok', goHome);
+
+    $(document).on('click', '.js-verify-resend', function() {
+        if (!lastEmail) return;
+        var $btn = $(this);
+        $btn.prop('disabled', true).text('Отправляем…');
+        API.post('/auth/resend-verification/', {email: lastEmail})
+            .then(function() {
+                showToast('Если такой email зарегистрирован, письмо отправлено.', 'success');
+            })
+            .catch(function() {
+                showToast('Не удалось отправить письмо. Попробуйте позже.', 'error');
+            })
+            .finally(function() {
+                $btn.prop('disabled', false).text('Отправить письмо ещё раз');
+            });
+    });
+
     var token = new URLSearchParams(location.search).get('token');
     if (!token) {
-        $('#verifyState').addClass('hidden');
-        $('#verifyError').removeClass('hidden');
+        showPane('#verifyInvalid');
         return;
     }
     fetch('/api/auth/verify-email/', {
@@ -41,20 +88,40 @@ $(function() {
     })
         .then(function(res) { return res.json().then(function(j) { return {ok: res.ok, json: j}; }); })
         .then(function(r) {
-            $('#verifyState').addClass('hidden');
-            if (r.ok && r.json.tokens) {
-                $('#verifySuccess').removeClass('hidden');
-                try {
-                    sessionStorage.setItem('mh_email_confirmed', r.json.user.email || '');
-                } catch (e) {}
-                setTimeout(function() { location.replace('/'); }, 1200);
-            } else {
-                $('#verifyError').removeClass('hidden');
+            var json = r.json;
+            lastEmail = (json.email || '').trim();
+
+            if (r.ok && json.code === 'email_already_verified') {
+                showPane('#verifyAlready');
+                okMode = 'login';
+                okToast = 'Email уже подтверждён.';
+                return;
             }
+            if (r.ok && json.tokens) {
+                showPane('#verifySuccess');
+                okMode = 'login';
+                okToast = 'Электронная почта подтверждена. Войдите в аккаунт.';
+                return;
+            }
+            if (json.code === 'token_expired') {
+                showPane('#verifyExpired');
+                if (json.user_exists) {
+                    $('#verifyExpiredText').text('Срок действия ссылки истёк. Отправьте письмо ещё раз, чтобы активировать аккаунт.');
+                    $('.js-verify-resend').removeClass('hidden');
+                    okMode = 'login';
+                } else {
+                    $('#verifyExpiredText').text('Срок действия ссылки истёк. Необходимо зарегистрироваться заново.');
+                    okMode = 'register';
+                }
+                return;
+            }
+            // token_invalid / user_not_found и любые другие ошибки.
+            showPane('#verifyInvalid');
+            okMode = json.code === 'user_not_found' ? 'register' : '';
         })
         .catch(function() {
-            $('#verifyState').addClass('hidden');
-            $('#verifyError').removeClass('hidden');
+            showPane('#verifyInvalid');
+            okMode = '';
         });
 });
 </script>

@@ -1,15 +1,27 @@
 import re
+import time
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.cache import cache as django_cache
 from django.core.management import call_command
+from django.core.signing import TimestampSigner, b62_encode
 from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from users import services
+
 User = get_user_model()
+
+
+def make_expired_token(pk):
+    """Подписывает токен подтверждения с просроченной меткой времени."""
+    old_ts = b62_encode(int(time.time()) - (services.VERIFY_TOKEN_MAX_AGE + 3600))
+    signer = TimestampSigner(salt=services.VERIFY_SALT)
+    base = f'{pk}:{old_ts}'
+    return f'{base}:{signer.signature(base)}'
 
 # Троттлинг DRF хранит счётчики в стандартном кеше, который в проде — Redis.
 # В тестах используем локальный кеш и обнуляем его перед каждым тестом,
@@ -144,7 +156,7 @@ class AuthTestCase(APITestCase):
         self.assertEqual(login.status_code, status.HTTP_200_OK)
 
     def test_verify_email_invalid_token(self):
-        """Подтверждение с невалидным токеном отклоняется."""
+        """Подтверждение с невалидным токеном отклоняется с кодом token_invalid."""
         self.register()
         res = self.client.post(
             '/api/auth/verify-email/',
@@ -152,7 +164,50 @@ class AuthTestCase(APITestCase):
             format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data.get('code'), 'token_invalid')
         self.assertFalse(User.objects.get(username='ivan').email_verified)
+
+    def test_verify_email_expired_token_registered_user(self):
+        """Истёкший токен для зарегистрированного пользователя даёт код token_expired с user_exists."""
+        self.register()
+        user = User.objects.get(username='ivan')
+        res = self.client.post(
+            '/api/auth/verify-email/',
+            {'token': make_expired_token(user.pk)},
+            format='json',
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data.get('code'), 'token_expired')
+        self.assertTrue(res.data.get('user_exists'))
+        self.assertEqual(res.data.get('email'), 'ivan@example.com')
+        self.assertFalse(User.objects.get(username='ivan').email_verified)
+
+    def test_verify_email_expired_token_unknown_user(self):
+        """Истёкший токен для несуществующего пользователя: user_exists=False (нужна регистрация)."""
+        res = self.client.post(
+            '/api/auth/verify-email/',
+            {'token': make_expired_token(999999)},
+            format='json',
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data.get('code'), 'token_expired')
+        self.assertFalse(res.data.get('user_exists'))
+
+    def test_verify_email_second_click_already_verified(self):
+        """Повторный клик по ссылке для подтверждённого email сообщает email_already_verified."""
+        self.register()
+        self.assertEqual(self.verify().status_code, status.HTTP_200_OK)
+
+        user = User.objects.get(username='ivan')
+        res = self.client.post(
+            '/api/auth/verify-email/',
+            {'token': services.make_verification_token(user)},
+            format='json',
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data.get('code'), 'email_already_verified')
+        self.assertNotIn('tokens', res.data)
+        self.assertTrue(User.objects.get(username='ivan').email_verified)
 
     def test_login_by_username(self):
         """Вход по логину работает после подтверждения email."""

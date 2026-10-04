@@ -18,7 +18,7 @@ from .serializers import (
     RegisterSerializer,
     UserSerializer,
 )
-from .services import get_verification_user_id, send_verification_email
+from .services import get_verification_status, send_verification_email
 
 User = get_user_model()
 
@@ -87,16 +87,52 @@ class VerifyEmailView(APIView):
     throttle_scope = 'verify_email'
 
     def post(self, request):
-        """Проверяет токен, подтверждает email и авторизует пользователя."""
+        """Проверяет токен и возвращает разный ответ:
+        — подтверждает email и выдаёт токены (первый раз);
+        — сообщает, что email уже подтверждён;
+        — сообщает о невалидном или истёкшем токене.
+        """
         token = (request.data.get('token') or '').strip()
-        user_id = get_verification_user_id(token)
+        token_status, user_id = get_verification_status(token)
+
+        if token_status == 'invalid':
+            return Response(
+                {'detail': 'Ссылка недействительна.', 'code': 'token_invalid'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = None
         if user_id:
             user = User.objects.filter(pk=user_id).first()
 
-        if not user:
+        # Истёкший токен: сайт должен сообщить об этом отдельно.
+        if token_status == 'expired':
+            if user and user.email_verified:
+                return Response(
+                    {
+                        'detail': 'Email уже подтверждён.',
+                        'code': 'email_already_verified',
+                        'email': user.email,
+                    },
+                    status=status.HTTP_200_OK,
+                )
             return Response(
-                {'detail': 'Ссылка недействительна или истекла. Запросите новое письмо.'},
+                {
+                    'detail': 'Срок действия ссылки истёк.',
+                    'code': 'token_expired',
+                    'user_exists': bool(user),
+                    'email': user.email if user else None,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Токен валиден, но пользователь не найден (например, аккаунт удалён).
+        if user is None:
+            return Response(
+                {
+                    'detail': 'Пользователь не найден. Необходимо зарегистрироваться заново.',
+                    'code': 'user_not_found',
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -106,15 +142,28 @@ class VerifyEmailView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        if not user.email_verified:
-            user.email_verified = True
-            user.save(update_fields=['email_verified'])
+        # Повторное нажатие на ссылку после подтверждения.
+        if user.email_verified:
+            return Response(
+                {
+                    'detail': 'Email уже подтверждён.',
+                    'code': 'email_already_verified',
+                    'email': user.email,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        user.email_verified = True
+        user.save(update_fields=['email_verified'])
 
         # Сессия нужна серверным guard-страницам (админ-панель, кабинет).
         login(request, user)
         tokens = get_tokens_for_user(user)
         return Response(
             {
+                'detail': 'Email подтверждён.',
+                'code': 'verified',
+                'email': user.email,
                 'user': UserSerializer(user).data,
                 'tokens': tokens,
             }

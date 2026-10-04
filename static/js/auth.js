@@ -128,18 +128,23 @@ $(function() {
     $(document).on('auth:change', updateAuthUI);
     updateAuthUI();
 
-    // Переход с страницы подтверждения email: открываем вход с информацией о подтверждении.
-    const verifiedEmail = (function() {
-        try { return sessionStorage.getItem('mh_email_confirmed') || ''; }
-        catch (e) { return ''; }
+    // Переход со страницы подтверждения email: открываем окно входа/регистрации.
+    const authRedirect = (function() {
+        try { return JSON.parse(sessionStorage.getItem('mh_auth_redirect') || 'null'); }
+        catch (e) { return null; }
     })();
-    if (verifiedEmail) {
-        try { sessionStorage.removeItem('mh_email_confirmed'); } catch (e) {}
-        openAuthModal('login');
-        setTimeout(() => {
-            $('#loginUsername').val(verifiedEmail);
-            showToast('Электронная почта подтверждена. Войдите в аккаунт.', 'success');
-        }, 100);
+    if (authRedirect) {
+        try { sessionStorage.removeItem('mh_auth_redirect'); } catch (e) {}
+        const mode = authRedirect.mode === 'register' ? 'register' : 'login';
+        openAuthModal(mode);
+        if (mode === 'login' && authRedirect.email) {
+            setTimeout(() => {
+                $('#loginUsername').val(authRedirect.email);
+            }, 100);
+        }
+        if (authRedirect.toast) {
+            setTimeout(() => showToast(authRedirect.toast, 'success'), 200);
+        }
     }
 
     // Форма регистрации

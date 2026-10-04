@@ -20,12 +20,31 @@ def make_verification_token(user):
     return _verifier.sign(str(user.pk))
 
 
-def get_verification_user_id(token):
-    """Возвращает id пользователя по валидному токену либо None (просрочен/невалиден)."""
+def get_verification_status(token):
+    """Проверяет токен подтверждения.
+
+    Возвращает кортеж (status, user_id):
+      status 'valid'   — токен в силе, user_id — id пользователя;
+      status 'expired' — подпись верная, но истёк срок (user_id может быть None);
+      status 'invalid' — токен невалиден (user_id — None).
+    """
+    if not token:
+        return 'invalid', None
     try:
-        return int(_verifier.unsign(token, max_age=VERIFY_TOKEN_MAX_AGE))
-    except (BadSignature, SignatureExpired, ValueError):
-        return None
+        value = _verifier.unsign(token, max_age=VERIFY_TOKEN_MAX_AGE)
+        return 'valid', int(value)
+    except SignatureExpired:
+        # Истёкший токен всё равно содержит id пользователя — возвращаем его.
+        try:
+            value = _verifier.unsign(token)
+        except (BadSignature, ValueError):
+            return 'expired', None
+        try:
+            return 'expired', int(value)
+        except ValueError:
+            return 'expired', None
+    except (BadSignature, ValueError):
+        return 'invalid', None
 
 
 def build_verification_url(user):
