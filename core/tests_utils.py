@@ -5,14 +5,19 @@ from django.test import override_settings
 
 
 class TempMediaMixin:
-    """Перенаправляет MEDIA_ROOT во временную папку, чтобы тесты не писали файлы в /media."""
+    """Перенаправляет MEDIA_ROOT во временную папку и изолирует кэш на время теста."""
 
     def setUp(self):
-        """Перенаправляет MEDIA_ROOT во временную папку перед тестом."""
+        """Перенаправляет MEDIA_ROOT и переключает кэш в LocMemCache."""
         self._tmp_media = None
         self._tmp_media = tempfile.mkdtemp()
-        self.override = override_settings(MEDIA_ROOT=self._tmp_media)
+        self.override = override_settings(
+            MEDIA_ROOT=self._tmp_media,
+            CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}},
+        )
         self.override.enable()
+        from django.core.cache import cache
+        cache.clear()
         super().setUp()
 
     def tearDown(self):

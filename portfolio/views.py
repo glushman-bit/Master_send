@@ -5,7 +5,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
 
 from core.permissions import IsMaster
-from .cache import invalidate_portfolio_cache
+from .cache import invalidate_portfolio_cache, make_portfolio_cache_key
 
 from .models import PortfolioImage, PortfolioItem
 from .serializers import PortfolioItemSerializer
@@ -39,7 +39,7 @@ class PortfolioViewSet(viewsets.ReadOnlyModelViewSet):
     def list(self, request, *args, **kwargs):
         """Возвращает кэшированный список работ портфолио"""
         query_string = request.query_params.urlencode()
-        cache_key = f'portfolio:list:{query_string}'
+        cache_key = make_portfolio_cache_key(query_string)
 
         cached_data = cache.get(cache_key)
 

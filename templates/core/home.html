@@ -175,7 +175,7 @@ $(async function() {
     function photoGrid(list, title) {
         return `<figure class="work-photo">
             <div class="work-photo-grid">
-                ${list.map(im => `<img src="${im.image}" alt="${title}" loading="lazy" onerror="this.classList.add('img-broken')">`).join('')}
+                ${list.map(im => `<img src="${im.thumb || im.image}" data-full="${im.image}" alt="${title}" loading="lazy" decoding="async" onerror="this.classList.add('img-broken')">`).join('')}
             </div>
         </figure>`;
     }
@@ -259,7 +259,7 @@ $(async function() {
         $zoom.addClass('hidden');
         if ($modal.hasClass('hidden')) $('body').removeClass('modal-open');
     }
-    $(document).on('click', '.work-photo-grid img', function() { openZoom($(this).attr('src')); });
+    $(document).on('click', '.work-photo-grid img', function() { openZoom($(this).data('full') || $(this).attr('src')); });
     $(document).on('click', '.js-zoom-close', closeZoom);
     $(document).on('click', '#workZoom', function(e) { if (e.target === this) closeZoom(); });
 

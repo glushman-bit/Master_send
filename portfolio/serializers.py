@@ -6,7 +6,7 @@ from .models import PortfolioImage, PortfolioItem
 class PortfolioImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = PortfolioImage
-        fields = ('id', 'kind', 'image', 'order')
+        fields = ('id', 'kind', 'image', 'thumb', 'order')
 
 
 class PortfolioItemSerializer(serializers.ModelSerializer):

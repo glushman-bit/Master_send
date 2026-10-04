@@ -1,3 +1,5 @@
+import base64
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -5,6 +7,10 @@ from rest_framework.test import APITestCase
 from core.tests_utils import TempMediaMixin
 from portfolio.models import PortfolioImage, PortfolioItem
 from services.models import Service
+
+TINY_PNG = base64.b64decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+)
 
 
 class PortfolioTestCase(TempMediaMixin, APITestCase):
@@ -60,3 +66,21 @@ class PortfolioTestCase(TempMediaMixin, APITestCase):
         self.assertEqual(kinds.count('after'), 1)
         for im in item['images']:
             self.assertTrue(im['image'].startswith('http'))
+
+    def test_creates_thumb_and_exposes_it_in_api(self):
+        """Для загруженного изображения создаётся эскиз и возвращается в API."""
+        item = PortfolioItem.objects.get(title='Диски до/после')
+        img = PortfolioImage.objects.create(
+            item=item,
+            kind='before',
+            image=SimpleUploadedFile('real.png', TINY_PNG, content_type='image/png'),
+        )
+        img.refresh_from_db()
+        self.assertTrue(img.thumb)
+        self.assertTrue(img.thumb.name.endswith('_thumb.jpg'))
+
+        res = self.client.get('/api/portfolio/')
+        result = next(p for p in res.data['results'] if p['title'] == 'Диски до/после')
+        found = next(im for im in result['images'] if im['id'] == img.id)
+        self.assertIn('thumb', found)
+        self.assertTrue(found['thumb'].startswith('http'))
