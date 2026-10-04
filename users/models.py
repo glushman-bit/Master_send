@@ -11,6 +11,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20, blank=True, verbose_name='Телефон')
     avatar = models.ImageField(upload_to='avatars/%Y/%m/', blank=True, null=True, verbose_name='Аватар')
     bio = models.TextField(blank=True, max_length=500, verbose_name='О себе')
+    email_verified = models.BooleanField(default=False, verbose_name='Email подтверждён')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

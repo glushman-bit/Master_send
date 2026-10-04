@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Подтверждение email — MasterBlast{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card" style="text-align:center;">
+        <div class="auth-header">
+            <h1>Подтверждение email</h1>
+            <p class="muted">Проверяем вашу ссылку…</p>
+        </div>
+        <div id="verifyState" class="js-verify-pending">
+            <p class="muted">Пожалуйста, подождите.</p>
+        </div>
+        <div id="verifySuccess" class="hidden">
+            <p style="font-size:17px; font-weight:600; margin:0 0 8px;">Email подтверждён!</p>
+            <p class="muted" style="margin:0 0 24px;">Ваш аккаунт активирован. Перенаправляем ко входу…</p>
+        </div>
+        <div id="verifyError" class="hidden">
+            <p class="warning-text" style="margin:0 0 20px;">Не удалось подтвердить email. Ссылка недействительна или истекла.</p>
+            <a href="{% url 'core:home' %}#contacts" class="btn btn-ghost btn-block">На главную</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    var token = new URLSearchParams(location.search).get('token');
+    if (!token) {
+        $('#verifyState').addClass('hidden');
+        $('#verifyError').removeClass('hidden');
+        return;
+    }
+    fetch('/api/auth/verify-email/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({token: token}),
+    })
+        .then(function(res) { return res.json().then(function(j) { return {ok: res.ok, json: j}; }); })
+        .then(function(r) {
+            $('#verifyState').addClass('hidden');
+            if (r.ok && r.json.tokens) {
+                $('#verifySuccess').removeClass('hidden');
+                try {
+                    sessionStorage.setItem('mh_email_confirmed', r.json.user.email || '');
+                } catch (e) {}
+                setTimeout(function() { location.replace('/'); }, 1200);
+            } else {
+                $('#verifyError').removeClass('hidden');
+            }
+        })
+        .catch(function() {
+            $('#verifyState').addClass('hidden');
+            $('#verifyError').removeClass('hidden');
+        });
+});
+</script>
+{% endblock %}

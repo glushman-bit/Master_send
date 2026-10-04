@@ -28,6 +28,7 @@ class Command(BaseCommand):
         user.is_active = True
         user.is_staff = True
         user.is_superuser = True
+        user.email_verified = True
         user.set_password(password)
         user.save()
 

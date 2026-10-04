@@ -1,13 +1,32 @@
+import re
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core import mail
+from django.core.cache import cache as django_cache
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 User = get_user_model()
 
-
+# Троттлинг DRF хранит счётчики в стандартном кеше, который в проде — Redis.
+# В тестах используем локальный кеш и обнуляем его перед каждым тестом,
+# чтобы поздние тесты не получали 429 от накопившихся счётчиков.
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+)
 class AuthTestCase(APITestCase):
+    def setUp(self):
+        """Очищает почтовый ящик и кеш (счётчики троттлинга) перед каждым тестом."""
+        mail.outbox.clear()
+        django_cache.clear()
+
     def register(self, **overrides):
         """Отправляет POST-запрос на регистрацию с указанными переопределениями."""
         data = {
@@ -22,13 +41,39 @@ class AuthTestCase(APITestCase):
         data.update(overrides)
         return self.client.post('/api/auth/register/', data, format='json')
 
-    def test_register_returns_tokens(self):
-        """Регистрация возвращает JWT-токены и данные пользователя."""
+    def last_verify_token(self):
+        """Достаёт токен подтверждения из последнего отправленного письма."""
+        msg = mail.outbox[-1]
+        body = msg.body + ' ' + ' '.join(a[0] for a in msg.alternatives)
+        m = re.search(r'/verify/\?token=([^\s"<]+)', body)
+        self.assertIsNotNone(m, 'В письме нет ссылки подтверждения')
+        return m.group(1)
+
+    def verify(self):
+        """Подтверждает регистрацию последним письмом и возвращает ответ."""
+        return self.client.post(
+            '/api/auth/verify-email/',
+            {'token': self.last_verify_token()},
+            format='json',
+        )
+
+    def register_verified(self, **overrides):
+        """Регистрирует пользователя и сразу подтверждает email — возвращает JWT-токены."""
+        self.register(**overrides)
+        res = self.verify()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        return res.data['tokens']
+
+    def test_register_sends_verification_and_no_tokens(self):
+        """Регистрация создаёт неподтверждённого пользователя и шлёт письмо без выдачи токенов."""
         res = self.register()
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertIn('access', res.data['tokens'])
-        self.assertIn('refresh', res.data['tokens'])
-        self.assertEqual(res.data['user']['username'], 'ivan')
+        self.assertNotIn('tokens', res.data)
+        self.assertIn('detail', res.data)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('/verify/?token=', mail.outbox[0].body)
+        user = User.objects.get(username='ivan')
+        self.assertFalse(user.email_verified)
 
     def test_register_password_mismatch(self):
         """Регистрация отклоняется при несовпадении паролей."""
@@ -70,15 +115,51 @@ class AuthTestCase(APITestCase):
         res = self.register(password='123456', password_confirm='123456')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
-    def test_login_by_username(self):
-        """Вход по логину работает."""
+    def test_login_unverified_email_rejected_with_code(self):
+        """Вход неподтверждённого пользователя запрещён с кодом email_not_verified."""
         self.register()
         res = self.client.post(
             '/api/auth/login/',
-            {
-                'username': 'ivan',
-                'password': 'StrongPass123!',
-            },
+            {'username': 'ivan', 'password': 'StrongPass123!'},
+            format='json',
+        )
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data.get('code'), 'email_not_verified')
+        self.assertEqual(res.data.get('email'), 'ivan@example.com')
+        self.assertNotIn('access', res.data.get('tokens', {}))
+
+    def test_verify_email_activates_and_returns_tokens(self):
+        """Подтверждение по ссылке активирует аккаунт и возвращает JWT-токены."""
+        self.register()
+        res = self.verify()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('access', res.data['tokens'])
+        self.assertTrue(User.objects.get(username='ivan').email_verified)
+
+        login = self.client.post(
+            '/api/auth/login/',
+            {'username': 'ivan', 'password': 'StrongPass123!'},
+            format='json',
+        )
+        self.assertEqual(login.status_code, status.HTTP_200_OK)
+
+    def test_verify_email_invalid_token(self):
+        """Подтверждение с невалидным токеном отклоняется."""
+        self.register()
+        res = self.client.post(
+            '/api/auth/verify-email/',
+            {'token': 'not-a-real-token'},
+            format='json',
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(User.objects.get(username='ivan').email_verified)
+
+    def test_login_by_username(self):
+        """Вход по логину работает после подтверждения email."""
+        self.register_verified()
+        res = self.client.post(
+            '/api/auth/login/',
+            {'username': 'ivan', 'password': 'StrongPass123!'},
             format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -86,13 +167,10 @@ class AuthTestCase(APITestCase):
 
     def test_login_by_email(self):
         """Вход по email работает."""
-        self.register()
+        self.register_verified()
         res = self.client.post(
             '/api/auth/login/',
-            {
-                'username': 'IVAN@example.com',
-                'password': 'StrongPass123!',
-            },
+            {'username': 'IVAN@example.com', 'password': 'StrongPass123!'},
             format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -100,34 +178,53 @@ class AuthTestCase(APITestCase):
 
     def test_login_wrong_password(self):
         """Вход с неверным паролем отклоняется."""
-        self.register()
+        self.register_verified()
         res = self.client.post(
             '/api/auth/login/',
-            {
-                'username': 'ivan',
-                'password': 'wrong',
-            },
+            {'username': 'ivan', 'password': 'wrong'},
             format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_login_deactivated_user_rejected(self):
         """Деактивированный пользователь не может войти даже с верным паролем."""
-        self.register()
+        self.register_verified()
         user = User.objects.get(username='ivan')
         user.is_active = False
         user.save()
 
         res = self.client.post(
             '/api/auth/login/',
-            {
-                'username': 'ivan',
-                'password': 'StrongPass123!',
-            },
+            {'username': 'ivan', 'password': 'StrongPass123!'},
             format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertNotIn('access', res.data.get('tokens', {}))
+
+    def test_resend_verification(self):
+        """Повторная отправка шлёт новое письмо с токеном."""
+        self.register()
+        mail.outbox.clear()
+        res = self.client.post(
+            '/api/auth/resend-verification/',
+            {'email': 'ivan@example.com'},
+            format='json',
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 1)
+        token = self.last_verify_token()
+        self.client.post('/api/auth/verify-email/', {'token': token}, format='json')
+        self.assertTrue(User.objects.get(username='ivan').email_verified)
+
+    def test_resend_verification_hides_unknown_email(self):
+        """Повторная отправка не раскрывает, зарегистрирован ли email."""
+        res = self.client.post(
+            '/api/auth/resend-verification/',
+            {'email': 'nobody@example.com'},
+            format='json',
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_me_requires_auth(self):
         """Получение профиля требует авторизации."""
@@ -136,7 +233,7 @@ class AuthTestCase(APITestCase):
 
     def test_me_returns_profile(self):
         """Авторизованный пользователь получает свой профиль."""
-        tokens = self.register().data['tokens']
+        tokens = self.register_verified()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
         res = self.client.get('/api/auth/me/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -145,22 +242,19 @@ class AuthTestCase(APITestCase):
     def test_profile_update_rejects_duplicate_email(self):
         """Обновление профиля отклоняет email, занятый другим пользователем."""
         self.register()
-        User.objects.create_user(username='petr', password='Pass123!', email='petr@example.com')
+        petr = User.objects.create_user(username='petr', password='Pass123!', email='petr@example.com')
+        petr.email_verified = True
+        petr.save()
         tokens = self.client.post(
             '/api/auth/login/',
-            {
-                'username': 'petr',
-                'password': 'Pass123!',
-            },
+            {'username': 'petr', 'password': 'Pass123!'},
             format='json',
         ).data['tokens']
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
 
         res = self.client.patch(
             '/api/auth/me/',
-            {
-                'email': 'IVAN@example.com',
-            },
+            {'email': 'IVAN@example.com'},
             format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
@@ -168,28 +262,22 @@ class AuthTestCase(APITestCase):
 
     def test_profile_update_keeps_own_email(self):
         """Пользователь может оставить свой email неизменным при обновлении."""
-        tokens = self.register().data['tokens']
+        tokens = self.register_verified()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
         res = self.client.patch(
             '/api/auth/me/',
-            {
-                'email': 'ivan@example.com',
-                'first_name': 'Иван',
-            },
+            {'email': 'ivan@example.com', 'first_name': 'Иван'},
             format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_change_password(self):
         """Смена пароля работает, после неё вход с новым паролем возможен."""
-        tokens = self.register().data['tokens']
+        tokens = self.register_verified()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
         res = self.client.post(
             '/api/auth/change-password/',
-            {
-                'old_password': 'StrongPass123!',
-                'new_password': 'NewStrongPass456!',
-            },
+            {'old_password': 'StrongPass123!', 'new_password': 'NewStrongPass456!'},
             format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -197,24 +285,18 @@ class AuthTestCase(APITestCase):
         self.client.credentials()
         login = self.client.post(
             '/api/auth/login/',
-            {
-                'username': 'ivan',
-                'password': 'NewStrongPass456!',
-            },
+            {'username': 'ivan', 'password': 'NewStrongPass456!'},
             format='json',
         )
         self.assertEqual(login.status_code, status.HTTP_200_OK)
 
     def test_change_password_wrong_old(self):
         """Смена пароля отклоняется при неверном старом пароле."""
-        tokens = self.register().data['tokens']
+        tokens = self.register_verified()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
         res = self.client.post(
             '/api/auth/change-password/',
-            {
-                'old_password': 'nope',
-                'new_password': 'NewStrongPass456!',
-            },
+            {'old_password': 'nope', 'new_password': 'NewStrongPass456!'},
             format='json',
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
@@ -243,6 +325,7 @@ class CreateSuperuserCommandTestCase(TestCase):
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
         self.assertTrue(user.is_active)
+        self.assertTrue(user.email_verified)
         self.assertEqual(user.email, 'boss@example.com')
         self.assertTrue(user.check_password('topsecret'))
 
@@ -257,6 +340,7 @@ class CreateSuperuserCommandTestCase(TestCase):
         user.refresh_from_db()
         self.assertEqual(user.email, 'boss@example.com')
         self.assertTrue(user.check_password('topsecret'))
+        self.assertTrue(user.email_verified)
 
     def test_defaults_when_env_missing(self):
         """При отсутствии переменных окружения используются значения по умолчанию."""

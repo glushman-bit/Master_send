@@ -9,9 +9,13 @@ class AdminPanelViewTestCase(TestCase):
         """Создаёт клиента, мастера и администратора для тестов панели."""
         self.client = Client()
         self.client_user = User.objects.create_user(username='client', password='Pass123!', email='client@mail.ru')
+        self.client_user.email_verified = True
+        self.client_user.save()
         self.master = User.objects.create_user(
             username='master', password='Pass123!', email='master@mail.ru', role='master'
         )
+        self.master.email_verified = True
+        self.master.save()
         self.admin = User.objects.create_superuser(username='admin', password='Pass123!', email='admin@mail.ru')
 
     def test_admin_panel_requires_auth(self):

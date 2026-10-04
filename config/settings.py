@@ -182,6 +182,8 @@ SIMPLE_JWT = {
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'login': '20/min',
     'register': '20/min',
+    'verify_email': '10/min',
+    'resend_verification': '5/min',
     'anon': '60/min',
     'user': '300/min',
 }
@@ -199,7 +201,8 @@ CORS_ALLOWED_ORIGINS = _cors_env or [
 # Надёжные origins для форм (CSRF) в проде, напр: https://master-send.ru,https://www.master-send.ru
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
 
-# Email: в dev (DEBUG=True) — консоль, в проде — SMTP, если заданы EMAIL_HOST/EMAIL_PORT.
+# Email: если задан EMAIL_HOST — реальная отправка по SMTP (независимо от DEBUG).
+# Если SMTP не настроен, в dev письма печатаются в консоль.
 EMAIL_HOST = os.getenv('EMAIL_HOST', '')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
@@ -208,11 +211,13 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
 EMAIL_BACKEND = (
     'django.core.mail.backends.smtp.EmailBackend'
-    if EMAIL_HOST and not DEBUG
+    if EMAIL_HOST
     else 'django.core.mail.backends.console.EmailBackend'
 )
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'info@master-send.ru')
 ORDER_NOTIFY_RECIPIENTS = os.getenv('ORDER_NOTIFY_RECIPIENTS', 'info@master-send.ru')
+# Абсолютный адрес сайта — используется в письмах и ссылках подтверждения.
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
 
 # ====== Безопасность в продакшене ======
 # По умолчанию безопасные значения (True). Для локальной разработки по HTTP
@@ -240,3 +245,7 @@ CACHES = {
         'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}',
     }
 }
+
+# Настройки email
+# LOGIN_REDIRECT_URL = 'mailing_service:main_page'
+# LOGOUT_REDIRECT_URL = 'mailing_service:main_page'

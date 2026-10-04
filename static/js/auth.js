@@ -18,6 +18,8 @@ $(function() {
         const isLogin = mode === 'login';
         $('#loginForm').toggleClass('hidden', !isLogin);
         $('#registerForm').toggleClass('hidden', isLogin);
+        $('#registerSent').addClass('hidden');
+        $('.js-resend-verify').addClass('hidden');
         $('.auth-tab').toggleClass('active', function() { return $(this).data('mode') === mode; });
         $('#authTitle').text(isLogin ? 'Вход' : 'Регистрация');
         $('#authSubtitle').text(isLogin ? 'Войдите в свой аккаунт' : 'Создайте новый аккаунт');
@@ -126,7 +128,23 @@ $(function() {
     $(document).on('auth:change', updateAuthUI);
     updateAuthUI();
 
+    // Переход с страницы подтверждения email: открываем вход с информацией о подтверждении.
+    const verifiedEmail = (function() {
+        try { return sessionStorage.getItem('mh_email_confirmed') || ''; }
+        catch (e) { return ''; }
+    })();
+    if (verifiedEmail) {
+        try { sessionStorage.removeItem('mh_email_confirmed'); } catch (e) {}
+        openAuthModal('login');
+        setTimeout(() => {
+            $('#loginUsername').val(verifiedEmail);
+            showToast('Электронная почта подтверждена. Войдите в аккаунт.', 'success');
+        }, 100);
+    }
+
     // Форма регистрации
+    let lastRegisterEmail = '';
+
     $(document).on('submit', '#registerForm', async function(e) {
         e.preventDefault();
         const $form = $(this);
@@ -138,14 +156,52 @@ $(function() {
         const data = Object.fromEntries(new FormData(this));
         try {
             const res = await API.post('/auth/register/', data);
-            API.setAuth(res.tokens, res.user);
-            closeAuthModal();
-            showToast('Добро пожаловать, ' + (res.user.first_name || res.user.username) + '!');
+            lastRegisterEmail = (data.email || res.email || '').trim();
+            showAuthSent(lastRegisterEmail);
         } catch (err) {
             const msg = extractError(err);
             $err.text(msg).removeClass('hidden');
         } finally {
             $btn.prop('disabled', false).text('Зарегистрироваться');
+        }
+    });
+
+    function showAuthSent(email) {
+        $('#loginForm, #registerForm, .auth-tabs').addClass('hidden');
+        $('#registerSent').removeClass('hidden');
+        $('#registerSentEmail').text(email || 'ваш email');
+    }
+
+    function hideAuthSent() {
+        $('#registerSent').addClass('hidden');
+        $('#authModal .js-error').text('').addClass('hidden');
+        $('.js-resend-verify').addClass('hidden');
+    }
+
+    $(document).on('click', '.js-sent-to-login', function(e) {
+        e.preventDefault();
+        hideAuthSent();
+        showAuthMode('login');
+    });
+
+    // Повторная отправка письма (с формы входа и с экрана «проверьте почту»)
+    $(document).on('click', '.js-resend-register, .js-resend-login', async function() {
+        const email = $(this).hasClass('js-resend-register')
+            ? lastRegisterEmail
+            : $('#loginUsername').val().trim();
+        if (!email) {
+            showToast('Укажите email для повторной отправки.', 'error');
+            return;
+        }
+        const $btn = $(this);
+        $btn.prop('disabled', true).text('Отправляем...');
+        try {
+            await API.post('/auth/resend-verification/', {email});
+            showToast('Если такой email зарегистрирован, письмо отправлено.');
+        } catch (err) {
+            showToast(extractError(err), 'error');
+        } finally {
+            $btn.prop('disabled', false).text('Отправить письмо ещё раз');
         }
     });
 
@@ -156,6 +212,7 @@ $(function() {
         const $btn = $form.find('button[type=submit]');
         const $err = $form.find('.js-error');
         $err.text('').addClass('hidden');
+        $('.js-resend-verify').addClass('hidden');
         $btn.prop('disabled', true).text('Вход...');
 
         const data = Object.fromEntries(new FormData(this));
@@ -166,6 +223,9 @@ $(function() {
             showToast('С возвращением, ' + (res.user.first_name || res.user.username) + '!');
         } catch (err) {
             $err.text(extractError(err)).removeClass('hidden');
+            if (err.data && err.data.code === 'email_not_verified') {
+                $('.js-resend-verify').removeClass('hidden');
+            }
         } finally {
             $btn.prop('disabled', false).text('Войти');
         }
@@ -181,6 +241,37 @@ $(function() {
         API.setAuth(null, null);
         showToast('Вы вышли из системы');
         window.location.href = '/';
+    });
+
+    // ===== Мобильное меню (бургер) =====
+    function closeMobileMenu() {
+        $('#siteHeader').removeClass('nav-open');
+        $('.js-nav-burger').attr('aria-expanded', 'false');
+        $('#mobileMenu').attr('aria-hidden', 'true');
+    }
+
+    $(document).on('click', '.js-nav-burger', function(e) {
+        e.stopPropagation();
+        const open = $('#siteHeader').hasClass('nav-open');
+        $('#siteHeader').toggleClass('nav-open', !open);
+        $(this).attr('aria-expanded', String(!open));
+        $('#mobileMenu').attr('aria-hidden', String(open));
+    });
+
+    $(document).on('click', '.js-mobile-menu a', closeMobileMenu);
+
+    $(document).on('click', function(e) {
+        if ($('#siteHeader').hasClass('nav-open') && !$(e.target).closest('#siteHeader').length) {
+            closeMobileMenu();
+        }
+    });
+
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') closeMobileMenu();
+    });
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 901) closeMobileMenu();
     });
 
     function extractError(err) {

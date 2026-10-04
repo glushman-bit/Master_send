@@ -14,7 +14,7 @@
             <span>Безопасность</span>
         </div>
         <div class="hero-actions">
-            <a href="#order" class="btn btn-primary js-add-order-only">Записаться на консультацию</a>
+            <a href="#order" class="btn btn-primary js-add-order-only">Оставить заявку</a>
 <!--            <a href="#works" class="btn btn-ghost">Наши работы</a>-->
         </div>
     </div>
@@ -83,15 +83,15 @@
             <p class="muted">Позвоните нам или оставьте заявку в форме ниже — ответим в течение рабочего дня</p>
             <div class="hero-actions">
                 <a href="tel:+79994576932" class="btn btn-primary js-contact-call">Позвонить</a>
-                <a href="#order" class="btn btn-ghost js-add-order-only">Записаться на консультацию</a>
+                <a href="#order" class="btn btn-ghost js-add-order-only">Оставить заявку</a>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ===== 7. Записаться на консультацию ===== -->
+<!-- ===== 7. Оставить заявку ===== -->
 <section class="container section" id="order">
-    <h2 class="section-title">Записаться на консультацию</h2>
+    <h2 class="section-title">Оставить заявку</h2>
     <div class="contact-layout">
         <div class="card order-form-card js-add-order-only">
             <h2>Заявка на консультацию</h2>
@@ -121,7 +121,7 @@
                     <textarea class="form-input" id="orderMessage" name="message" required></textarea>
                 </div>
                 <div class="form-error hidden js-error"></div>
-                <button type="submit" class="btn btn-primary btn-block">Записаться на консультацию</button>
+                <button type="submit" class="btn btn-primary btn-block">Оставить заявку</button>
             </form>
             <div class="order-success hidden">
                 <p class="order-success-text">Ваша заявка принята в работу</p>
@@ -130,10 +130,10 @@
         </div>
 
         <div class="card order-form-card js-order-blocked hidden">
-            <h2>Заявка на консультацию</h2>
+            <h2>Оставить заявку</h2>
             <p class="muted">Расскажите о задаче — пришлём предварительный расчёт и сроки</p>
             <div class="order-blocked-note">
-                <p>Для записи на консультацию необходимо <strong>авторизоваться</strong>.</p>
+                <p>Что бы оставить заявку необходимо <strong>авторизоваться</strong>.</p>
                 <div class="hero-actions">
                     <a href="#" class="btn btn-primary js-open-login">Войти</a>
                     <a href="#" class="btn btn-ghost js-open-register">Регистрация</a>
@@ -390,7 +390,7 @@ return '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loa
     $(document).on('click', '.js-about-zoom-close', closeAboutZoom);
     $(document).on('click', '#aboutZoom', function(e) { if (e.target === this) closeAboutZoom(); });
 
-    /* ===== Записаться на консультацию ===== */
+    /* ===== Оставить заявку ===== */
     try {
         const data = await API.get('/services/');
         const list = data.results || data;
@@ -425,7 +425,7 @@ return '<img class="about-image" src="' + esc(im.image) + '" alt="О нас" loa
             }
             $err.text(msg).removeClass('hidden');
         } finally {
-            $btn.prop('disabled', false).text('Записаться на консультацию');
+            $btn.prop('disabled', false).text('Оставить заявку');
         }
     });
 

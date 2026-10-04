@@ -18,6 +18,7 @@ from .serializers import (
     RegisterSerializer,
     UserSerializer,
 )
+from .services import get_verification_user_id, send_verification_email
 
 User = get_user_model()
 
@@ -29,7 +30,7 @@ def get_tokens_for_user(user):
 
 
 class RegisterView(generics.CreateAPIView):
-    """Регистрация — возвращает JWT-токены."""
+    """Регистрация — создаёт аккаунт и отправляет письмо для подтверждения email."""
 
     queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
@@ -38,19 +39,85 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def create(self, request, *args, **kwargs):
-        """Регистрирует нового пользователя и возвращает его данные и JWT-токены."""
+        """Создаёт пользователя (email не подтверждён) и шлёт письмо со ссылкой."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        # Создаём Django-сессию, чтобы серверные guard-страницы (админ-панель) видели пользователя.
+        user.email_verified = False
+        user.save(update_fields=['email_verified'])
+        send_verification_email(user)
+        # Аккаунт недоступен до подтверждения email: токены не выдаём и сессию не создаём.
+        return Response(
+            {
+                'detail': 'Мы отправили письмо для подтверждения email. '
+                          'Перейдите по ссылке из письма, чтобы активировать аккаунт.',
+                'email': user.email,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ResendVerificationView(APIView):
+    """Повторная отправка письма подтверждения по email."""
+
+    permission_classes = (permissions.AllowAny,)
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = 'resend_verification'
+
+    def post(self, request):
+        """Отправляет письмо, если пользователь с таким email существует и ещё не подтверждён."""
+        email = (request.data.get('email') or '').strip().lower()
+        if not email:
+            return Response(
+                {'detail': 'Укажите email.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user = User.objects.filter(email__iexact=email).first()
+        if user and user.email_verified is False:
+            send_verification_email(user)
+        # Всегда отвечаем одинаково, чтобы не раскрывать, зарегистрирован ли email.
+        return Response({'detail': 'Если такой email зарегистрирован и не подтверждён, письмо отправлено.'})
+
+
+class VerifyEmailView(APIView):
+    """Подтверждение email по токену из письма — активирует аккаунт и выдаёт токены."""
+
+    permission_classes = (permissions.AllowAny,)
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = 'verify_email'
+
+    def post(self, request):
+        """Проверяет токен, подтверждает email и авторизует пользователя."""
+        token = (request.data.get('token') or '').strip()
+        user_id = get_verification_user_id(token)
+        user = None
+        if user_id:
+            user = User.objects.filter(pk=user_id).first()
+
+        if not user:
+            return Response(
+                {'detail': 'Ссылка недействительна или истекла. Запросите новое письмо.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not user.is_active:
+            return Response(
+                {'detail': 'Аккаунт заблокирован. Обратитесь к администратору.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not user.email_verified:
+            user.email_verified = True
+            user.save(update_fields=['email_verified'])
+
+        # Сессия нужна серверным guard-страницам (админ-панель, кабинет).
         login(request, user)
         tokens = get_tokens_for_user(user)
         return Response(
             {
                 'user': UserSerializer(user).data,
                 'tokens': tokens,
-            },
-            status=status.HTTP_201_CREATED,
+            }
         )
 
 
@@ -80,10 +147,26 @@ class LoginView(APIView):
             user = User.objects.filter(username__iexact=username).first()
 
         # Пароль неверный ИЛИ аккаунт деактивирован — одинаковый ответ (не раскрываем деталей).
-        if not user or not user.is_active or not user.check_password(password):
+        if not user or not user.is_active:
             return Response(
                 {'detail': 'Неверный логин или пароль.'},
                 status=status.HTTP_401_UNAUTHORIZED,
+            )
+        if not user.check_password(password):
+            return Response(
+                {'detail': 'Неверный логин или пароль.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # Email не подтверждён — вход запрещён, но даём пользователю понятное сообщение.
+        if not user.email_verified:
+            return Response(
+                {
+                    'detail': 'Подтвердите адрес электронной почты. Перейдите по ссылке из письма.',
+                    'code': 'email_not_verified',
+                    'email': user.email,
+                },
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         tokens = get_tokens_for_user(user)

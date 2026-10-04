@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MasterBlast — Пескоструй • Порошковая покраска • Сварка{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=37">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=38">
 </head>
 <body>
     <header class="site-header" id="siteHeader">
@@ -21,7 +21,7 @@
                 <a href="{% url 'core:admin_panel' %}" class="js-admin-link hidden">Администрирование</a>
             </nav>
             <div class="user-nav">
-                <a href="tel:+79994576932" class="header-phone">+7 999 457 69 32</a>
+                <a href="tel:+79996665533" class="header-phone">+7 999 666 55 33</a>
                 <a href="#" class="btn btn-primary btn-sm js-create-order">Оставить заявку</a>
                 <div class="js-guest-only">
                     <a href="/#login" class="btn btn-ghost btn-sm js-open-login">Войти</a>
@@ -41,6 +41,34 @@
                         <span class="user-name js-user-name">...</span>
                     </a>
                     <button type="button" class="btn btn-ghost btn-sm user-logout js-logout">Выйти</button>
+                </div>
+            </div>
+            <button type="button" class="nav-burger js-nav-burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobileMenu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+        <div class="mobile-menu js-mobile-menu" id="mobileMenu" aria-hidden="true">
+            <div class="mobile-phone">
+                <a href="tel:+79994576932">+7 999 457 69 32</a>
+            </div>
+            <nav class="mobile-nav">
+                <a href="{% url 'core:home' %}#works">Наши работы</a>
+                <a href="{% url 'core:home' %}#services">Типы работ</a>
+                <a href="{% url 'core:home' %}#prices">Цены</a>
+                <a href="{% url 'core:home' %}#about">О нас</a>
+                <a href="{% url 'core:home' %}#contacts">Контакты</a>
+                <a href="{% url 'core:admin_panel' %}" class="js-admin-link hidden">Администрирование</a>
+                <a href="{% url 'core:cabinet' %}">Личный кабинет</a>
+            </nav>
+            <div class="mobile-actions">
+                <div class="js-guest-only">
+                    <a href="/#login" class="btn btn-ghost btn-block js-open-login">Войти</a>
+                    <a href="#" class="btn btn-secondary btn-block js-open-register">Регистрация</a>
+                </div>
+                <div class="js-auth-only hidden">
+                    <span class="role-badge js-user-role"></span>
+                    <a href="#" class="btn btn-primary btn-block js-create-order">Оставить заявку</a>
+                    <button type="button" class="btn btn-ghost btn-block user-logout js-logout">Выйти</button>
                 </div>
             </div>
         </div>
@@ -67,7 +95,7 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{% static 'js/api.js' %}?v=3"></script>
-    <script src="{% static 'js/auth.js' %}?v=7"></script>
+    <script src="{% static 'js/auth.js' %}?v=10"></script>
     <script src="{% static 'js/admin.js' %}?v=2"></script>
 
     <script>
@@ -108,6 +136,10 @@
                 </div>
                 <div class="form-error hidden js-error"></div>
                 <button type="submit" class="btn btn-primary btn-block">Войти</button>
+                <div class="js-resend-verify hidden">
+                    <p class="warning-text" style="margin: 0 0 8px;">Письмо не пришло? Проверьте папку «Спам».</p>
+                    <button type="button" class="btn btn-ghost btn-block btn-sm js-resend-login">Отправить письмо ещё раз</button>
+                </div>
                 <p class="muted modal-switch">Нет аккаунта? <a href="#" class="js-to-register">Зарегистрируйтесь</a></p>
             </form>
 
@@ -144,6 +176,17 @@
                 <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
                 <p class="muted modal-switch">Уже есть аккаунт? <a href="#" class="js-to-login">Войдите</a></p>
             </form>
+
+            <div id="registerSent" class="hidden">
+                <div class="auth-header">
+                    <h2>Проверьте почту</h2>
+                    <p class="muted">Мы отправили письмо с подтверждением на</p>
+                    <p style="color: var(--accent); font-weight: 700; word-break: break-all;" id="registerSentEmail"></p>
+                </div>
+                <p class="warning-text" style="margin: 0 0 18px;">Перейдите по ссылке из письма, чтобы активировать аккаунт. Ссылка действительна 48 часов.</p>
+                <button type="button" class="btn btn-ghost btn-block js-resend-register">Отправить письмо ещё раз</button>
+                <p class="muted modal-switch"><a href="#" class="js-sent-to-login">Назад ко входу</a></p>
+            </div>
         </div>
     </div>
 
