@@ -2,7 +2,6 @@ import uuid
 
 from django.core.cache import cache
 
-
 CACHE_VERSION_KEY = 'portfolio:cache_version'
 CACHE_TIMEOUT = 300
 

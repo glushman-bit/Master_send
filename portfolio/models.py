@@ -35,8 +35,11 @@ class PortfolioImage(models.Model):
     kind = models.CharField(max_length=10, choices=Kind.choices, verbose_name='Тип фото')
     image = models.ImageField(upload_to='portfolio/%Y/%m/', verbose_name='Фото')
     thumb = models.ImageField(
-        upload_to='portfolio/thumbs/%Y/%m/', null=True, blank=True,
-        verbose_name='Эскиз', help_text='Маленькая копия для ускорения загрузки карточек',
+        upload_to='portfolio/thumbs/%Y/%m/',
+        null=True,
+        blank=True,
+        verbose_name='Эскиз',
+        help_text='Маленькая копия для ускорения загрузки карточек',
     )
     order = models.PositiveIntegerField(default=0, verbose_name='Порядок')
 

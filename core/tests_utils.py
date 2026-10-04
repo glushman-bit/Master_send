@@ -17,6 +17,7 @@ class TempMediaMixin:
         )
         self.override.enable()
         from django.core.cache import cache
+
         cache.clear()
         super().setUp()
 

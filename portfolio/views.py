@@ -23,13 +23,7 @@ class PortfolioViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Возвращает опубликованные работы, при необходимости фильтруя по услуге."""
 
-        qs = PortfolioItem.objects.filter(
-            is_published=True
-        ).select_related(
-            'service'
-        ).prefetch_related(
-            'images'
-        )
+        qs = PortfolioItem.objects.filter(is_published=True).select_related('service').prefetch_related('images')
 
         service = self.request.query_params.get('service')
         if service:
@@ -116,11 +110,7 @@ class PortfolioAdminViewSet(viewsets.ModelViewSet):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
 
-        serializer = self.get_serializer(
-            instance,
-            data=request.data,
-            partial=partial
-        )
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
 
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()

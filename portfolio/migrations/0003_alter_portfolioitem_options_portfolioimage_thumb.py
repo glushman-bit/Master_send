@@ -17,6 +17,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='portfolioimage',
             name='thumb',
-            field=models.ImageField(blank=True, help_text='Маленькая копия для ускорения загрузки карточек', null=True, upload_to='portfolio/thumbs/%Y/%m/', verbose_name='Эскиз'),
+            field=models.ImageField(
+                blank=True,
+                help_text='Маленькая копия для ускорения загрузки карточек',
+                null=True,
+                upload_to='portfolio/thumbs/%Y/%m/',
+                verbose_name='Эскиз',
+            ),
         ),
     ]
