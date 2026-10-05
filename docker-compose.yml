@@ -90,4 +90,4 @@ volumes:
   static_volume:
   media_volume:
   certbot-www:
-  redis-data:
+  redis_data:
